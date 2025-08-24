@@ -1,7 +1,7 @@
 // ganz oben:
 'use client'
-import React from 'react'
-import { Square, CheckSquare, ArrowRight, Download, Upload, Wand2, Clipboard, FileJson, Save, Shuffle, RotateCw, Plus, Trash } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Square, CheckSquare, ArrowRight, Download, Upload, Wand2, Clipboard, FileJson, Save, Shuffle, RotateCw, Plus, Trash, FileText, Cog, Share2, UserCog, BarChart3, Lock, Bot} from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
