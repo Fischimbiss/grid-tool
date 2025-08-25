@@ -475,18 +475,18 @@ export default function ToolReviewMockup() {
     }));
 
   return (
-    <div className="p-6 bg-gray-200 text-gray-900 min-h-screen">
+    <div className="p-6 bg-gray-100 min-h-screen">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold">TOOL TITLE</h1>
-        <span className="text-gray-600 block mt-1">ID: 1234-ABC-15</span>
+        <span className="text-gray-500 block mt-1">ID: 1234-ABC-15</span>
       </div>
 
       {/* Fortschritt */}
       <div className="flex items-center justify-between mb-6">
         {["Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5"].map((stage, idx) => (
           <div key={idx} className="flex-1 flex flex-col items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${idx < 3 ? "bg-pink-500 text-white" : "bg-gray-300 text-gray-600"}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${idx < 3 ? "bg-pink-500 text-white" : "bg-gray-300"}`}>
               {idx < 3 ? <CheckCircle size={18} /> : idx + 1}
             </div>
             <span className="text-sm text-center">{stage}</span>
@@ -507,9 +507,7 @@ export default function ToolReviewMockup() {
                       <button
                         onClick={() => setActiveKey(key)}
                         className={`flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left transition ${
-                          key === activeKey
-                            ? "bg-pink-50 text-pink-700 ring-1 ring-pink-200"
-                            : "hover:bg-gray-100"
+                          key === activeKey ? "bg-pink-50 text-pink-700 ring-1 ring-pink-200" : "hover:bg-gray-100"
                         }`}
                       >
                         <Icon size={14} />
@@ -524,11 +522,7 @@ export default function ToolReviewMockup() {
                             scrollToFirstUnread(key);
                           }}
                           className={`ml-2 shrink-0 text-xs rounded-full px-2 py-0.5 text-white hover:opacity-90 ${
-                            unreadBySection[key] > 3
-                              ? "bg-red-600"
-                              : unreadBySection[key] > 1
-                              ? "bg-orange-500"
-                              : "bg-blue-500"
+                            unreadBySection[key] > 3 ? "bg-red-600" : unreadBySection[key] > 1 ? "bg-orange-500" : "bg-blue-500"
                           }`}
                         >
                           {unreadBySection[key]}
@@ -545,19 +539,13 @@ export default function ToolReviewMockup() {
           <Card>
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <div
-                  className="flex items-center space-x-2 cursor-pointer"
-                  onClick={() => setShowGlobalComments(true)}
-                >
+                <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setShowGlobalComments(true)}>
                   <MessageSquare size={16} />
                   <span className="text-sm">Kommentare (gesamt: {totalComments})</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {duePrivateReminders.length > 0 && (
-                    <span
-                      className="flex items-center text-xs rounded-full px-2 py-0.5 bg-amber-500 text-white"
-                      title="Fällige private Wiedervorlagen"
-                    >
+                    <span className="flex items-center text-xs rounded-full px-2 py-0.5 bg-amber-500 text-white" title="Fällige private Wiedervorlagen">
                       <Bell size={12} className="mr-1" /> {duePrivateReminders.length}
                     </span>
                   )}
@@ -571,9 +559,7 @@ export default function ToolReviewMockup() {
                 <span className="text-sm">Anhänge (3)</span>
               </div>
               <div>
-                <Button size="sm" variant="secondary" onClick={() => setShowGlobalComments(true)}>
-                  Alle Kommentare anzeigen
-                </Button>
+                <Button size="sm" variant="secondary" onClick={() => setShowGlobalComments(true)}>Alle Kommentare anzeigen</Button>
               </div>
             </CardContent>
           </Card>
@@ -1007,10 +993,7 @@ export default function ToolReviewMockup() {
       {/* Globales Kommentar-Modal */}
       {showGlobalComments && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setShowGlobalComments(false)}
-          ></div>
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowGlobalComments(false)}></div>
           <div className="relative bg-white w-full max-w-5xl max-h-[80vh] rounded-xl shadow-xl p-6 overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -1113,3 +1096,4 @@ export default function ToolReviewMockup() {
     </div>
   );
 }
+
