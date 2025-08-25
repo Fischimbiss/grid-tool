@@ -1,0 +1,7 @@
+{
+  email {$ACME_EMAIL}
+}
+
+{$DOMAIN_GRID} {
+  reverse_proxy grid:80
+}
