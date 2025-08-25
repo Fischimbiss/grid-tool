@@ -29,7 +29,8 @@ import {
   Trash2,
   ChevronUp,
   ChevronDown,
-  CheckCircle
+  CheckCircle,
+  Paperclip
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
