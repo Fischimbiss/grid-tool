@@ -4,8 +4,8 @@
 
 /* kleines Polishing */
 :root {
-  --panel: #0f1520;
-  --border: #1f2a37;
+  --panel: #e5e7eb;
+  --border: #d1d5db;
 }
 .container {
   @apply max-w-6xl mx-auto p-4 sm:p-6;
