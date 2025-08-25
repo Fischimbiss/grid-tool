@@ -1,0 +1,26 @@
+services:
+  grid:
+    build: .
+    container_name: grid-tool-app
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: grid-tool-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - ACME_EMAIL=ihre_email@example.com
+      - DOMAIN_GRID=grid.skyserver.online
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - grid
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+  caddy-config:
