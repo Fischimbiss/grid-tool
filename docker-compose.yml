@@ -1,6 +1,6 @@
 services:
   grid:
-    build: .
+    image: ghcr.io/fischimbiss/grid-tool:latest
     container_name: grid-tool-app
     restart: unless-stopped
 
