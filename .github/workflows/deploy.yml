@@ -31,8 +31,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile        # Pfad zur Dockerfile explizit angeben
           push: true
           tags: ghcr.io/fischimbiss/grid-tool:latest
+          no-cache: true            # erzwingt einen frischen Build, ignoriert Caches
 
   deploy:
     runs-on: ubuntu-latest
