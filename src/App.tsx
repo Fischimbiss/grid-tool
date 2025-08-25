@@ -475,11 +475,11 @@ export default function ToolReviewMockup() {
     }));
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className="p-6 bg-gray-200 text-gray-900 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">TOOL TITLE</h1>
-        <span className="text-gray-500 block mt-1">ID: 1234-ABC-15</span>
+        <h1 className="text-2xl font-bold">SYSTEM NAME</h1>
+        <span className="text-gray-600 block mt-1">GRIP-ID: 1234-ABC-15</span>
       </div>
 
       {/* Fortschritt */}
