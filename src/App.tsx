@@ -484,7 +484,7 @@ export default function ToolReviewMockup() {
       </div>
 
       {/* Fortschritt */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         {["Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5"].map((stage, idx) => (
           <div key={idx} className="flex-1 flex flex-col items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${idx < 3 ? "bg-pink-500 text-white" : "bg-gray-300"}`}>
@@ -495,9 +495,9 @@ export default function ToolReviewMockup() {
         ))}
       </div>
 
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Sidebar */}
-        <div className="col-span-1">
+        <div className="col-span-1 md:col-span-1">
           <Card className="mb-4">
             <CardContent className="p-4 space-y-2">
               <div className="font-bold">Navigation</div>
@@ -567,7 +567,7 @@ export default function ToolReviewMockup() {
         </div>
 
         {/* Main Content */}
-        <div className="col-span-4">
+        <div className="col-span-1 md:col-span-4">
           <Card>
             <CardContent className="p-6 space-y-6">
               <div>

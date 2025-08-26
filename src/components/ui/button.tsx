@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { cn } from 'classnames'
+import cn from 'classnames'
 
 type Props = React.ButtonHTMLAttributes<HTMLButtonElement>
 
@@ -7,12 +7,13 @@ export const Button = React.forwardRef<HTMLButtonElement, Props>(
   ({ className, ...props }, ref) => (
     <button
       ref={ref}
-      className={[
+      className={cn(
         'inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium',
-        'bg-blue-600 hover:bg-blue-500 text-white',
+        'bg-pink-600 hover:bg-pink-500 text-white',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-pink-500',
         'disabled:opacity-60 disabled:pointer-events-none',
-        className || ''
-      ].join(' ')}
+        className
+      )}
       {...props}
     />
   )
