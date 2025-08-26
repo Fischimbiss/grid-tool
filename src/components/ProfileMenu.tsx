@@ -3,10 +3,12 @@ import { useUser } from '@/UserContext';
 
 interface ProfileMenuProps {
   onClose?: () => void;
+  onAdmin?: () => void;
 }
 
-export function ProfileMenu({ onClose }: ProfileMenuProps) {
+export function ProfileMenu({ onClose, onAdmin }: ProfileMenuProps) {
   const { user, roles, activeRole, setActiveRole, logout } = useUser();
+  const isAdmin = roles.some((r) => r.name === 'Admin');
 
   const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setActiveRole(e.target.value);
@@ -35,6 +37,11 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
           ))}
         </select>
       </label>
+      {isAdmin && (
+        <Button onClick={() => { onAdmin?.(); onClose?.(); }} className="mt-2" variant="neutral">
+          Admin Panel
+        </Button>
+      )}
       <Button onClick={handleLogout} className="mt-2">
         Logout
       </Button>

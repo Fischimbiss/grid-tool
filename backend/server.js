@@ -1,6 +1,7 @@
 import express from 'express'
 import session from 'express-session'
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const app = express()
 app.use(express.json())
@@ -58,15 +59,17 @@ crudRoutes('/api/groups', prisma.group, 'groups')
 app.get('/api/audit-logs', (_, res) => res.json(auditLogs))
 
 app.post('/api/login', async (req, res) => {
-  const { username } = req.body
-  const user = await prisma.user.findFirst({
-    where: { name: username },
+  const { email, password } = req.body
+  const user = await prisma.user.findUnique({
+    where: { email },
     include: {
       userRoles: { include: { role: true } },
       userGroups: { include: { group: true } },
     },
   })
   if (!user) return res.status(401).json({ error: 'Invalid credentials' })
+  const valid = await bcrypt.compare(password, user.password)
+  if (!valid) return res.status(401).json({ error: 'Invalid credentials' })
   req.session.userId = user.id
   res.json({
     user: {
