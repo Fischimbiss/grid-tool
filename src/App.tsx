@@ -495,7 +495,7 @@ export default function ToolReviewMockup() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Sidebar */}
         <div className="col-span-1 md:col-span-1">
           <Card className="mb-4">
@@ -567,7 +567,7 @@ export default function ToolReviewMockup() {
         </div>
 
         {/* Main Content */}
-        <div className="col-span-1 md:col-span-4">
+        <div className="col-span-1 lg:col-span-4 min-w-0 overflow-x-auto">
           <Card>
             <CardContent className="p-6 space-y-6">
               <div>
