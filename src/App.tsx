@@ -125,7 +125,12 @@ const ORGS: { code: string; label: string }[] = [
   { code: "WS", label: "WS (TDG - Betrieb Zentrum Wholesale)" }
 ];
 
-type BasisMatrixEntry = { active: boolean; data: boolean };
+type BasisMatrixEntry = {
+  active: boolean;
+  data: boolean;
+  activeCount: number;
+  dataCount: number;
+};
 
 type BasisInfo = {
   shortName: string; // Name/Kurzbezeichnung des Systems
@@ -143,7 +148,7 @@ const makeInitialBasis = (): BasisInfo => ({
   appId: "",
   shortDescription: "",
   matrix: ORGS.reduce((acc, o) => {
-    acc[o.code] = { active: false, data: false };
+    acc[o.code] = { active: false, data: false, activeCount: 0, dataCount: 0 };
     return acc;
   }, {} as Record<string, BasisMatrixEntry>)
 });
@@ -236,6 +241,8 @@ export default function ToolReviewMockup() {
     const saved = localStorage.getItem("basis-info");
     return saved ? JSON.parse(saved) : makeInitialBasis();
   });
+
+  const [matrixExpanded, setMatrixExpanded] = useState(false);
 
   // Neuer-Badge-Entwurf
   const [draft, setDraft] = useState<
@@ -469,12 +476,36 @@ export default function ToolReviewMockup() {
 
   // Basis-Helfer
   const updateBasisField = (field: keyof BasisInfo, value: string) => setBasis((b) => ({ ...b, [field]: value }));
-  const setMatrix = (code: string, key: keyof BasisMatrixEntry, checked: boolean) =>
-    setBasis((b) => ({ ...b, matrix: { ...b.matrix, [code]: { ...b.matrix[code], [key]: checked } } }));
-  const selectAll = (type: keyof BasisMatrixEntry, checked: boolean) =>
+  const setMatrixValue = (
+    code: string,
+    key: keyof BasisMatrixEntry,
+    value: boolean | number
+  ) =>
     setBasis((b) => ({
       ...b,
-      matrix: Object.fromEntries(Object.entries(b.matrix).map(([k, v]) => [k, { ...v, [type]: checked }]))
+      matrix: { ...b.matrix, [code]: { ...b.matrix[code], [key]: value } }
+    }));
+  const setMatrixChecked = (code: string, key: "active" | "data", checked: boolean) =>
+    setBasis((b) => {
+      const entry = b.matrix[code];
+      const updated: BasisMatrixEntry = { ...entry, [key]: checked } as BasisMatrixEntry;
+      if (!checked) {
+        if (key === "active") updated.activeCount = 0;
+        if (key === "data") updated.dataCount = 0;
+      }
+      return { ...b, matrix: { ...b.matrix, [code]: updated } };
+    });
+  const setMatrixCount = (
+    code: string,
+    key: "activeCount" | "dataCount",
+    count: number
+  ) => setMatrixValue(code, key, count);
+  const selectAll = (type: "active" | "data", checked: boolean) =>
+    setBasis((b) => ({
+      ...b,
+      matrix: Object.fromEntries(
+        Object.entries(b.matrix).map(([k, v]) => [k, { ...v, [type]: checked }])
+      )
     }));
 
     return (
@@ -791,59 +822,110 @@ export default function ToolReviewMockup() {
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-medium">Betroffene Gesellschaften/Betriebe</h3>
-                          <p className="text-xs text-gray-500">Wähle pro Einheit die Betroffenheit: <span className="font-medium">Aktive Nutzung</span> und/oder <span className="font-medium">Datenbetroffenheit</span>.</p>
+                          <p className="text-xs text-gray-500">Wähle pro Einheit die Betroffenheit und gib die Anzahl der betroffenen Mitarbeitenden an.</p>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-gray-500">Alle:</span>
-                          <label className="inline-flex items-center gap-1">
-                            <Checkbox checked={Object.values(basis.matrix).every((m) => m.active)} onCheckedChange={(c) => selectAll("active", Boolean(c))} />
-                            <span>Aktive Nutzung</span>
-                          </label>
-                          <label className="inline-flex items-center gap-1">
-                            <Checkbox checked={Object.values(basis.matrix).every((m) => m.data)} onCheckedChange={(c) => selectAll("data", Boolean(c))} />
-                            <span>Datenbetroffenheit</span>
-                          </label>
-                        </div>
+                        <Button variant="neutral" size="sm" onClick={() => setMatrixExpanded((e) => !e)} className="flex items-center gap-1">
+                          {matrixExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          {matrixExpanded ? "Einklappen" : "Bearbeiten"}
+                        </Button>
                       </div>
 
-                      <div className="overflow-auto rounded-lg border bg-white">
-                        <table className="w-full text-sm">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="text-left p-2">Gesellschaft / Betrieb</th>
-                              <th className="text-left p-2 w-40">Aktive Nutzung</th>
-                              <th className="text-left p-2 w-48">Datenbetroffenheit</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {ORGS.map((o) => (
-                              <tr key={o.code} className="border-t">
-                                <td className="p-2">
-                                  <div className="font-medium">{o.code}</div>
-                                  <div className="text-xs text-gray-500">{o.label}</div>
-                                </td>
-                                <td className="p-2">
-                                  <label className="inline-flex items-center gap-2">
-                                    <Checkbox checked={basis.matrix[o.code]?.active || false} onCheckedChange={(c) => setMatrix(o.code, "active", Boolean(c))} />
-                                    <span>Ja</span>
-                                  </label>
-                                </td>
-                                <td className="p-2">
-                                  <label className="inline-flex items-center gap-2">
-                                    <Checkbox checked={basis.matrix[o.code]?.data || false} onCheckedChange={(c) => setMatrix(o.code, "data", Boolean(c))} />
-                                    <span>Ja</span>
-                                  </label>
-                                </td>
+                      {matrixExpanded ? (
+                        <>
+                          <div className="flex items-center justify-end gap-2 text-sm">
+                            <span className="text-gray-500">Alle:</span>
+                            <label className="inline-flex items-center gap-1">
+                              <Checkbox checked={Object.values(basis.matrix).every((m) => m.active)} onCheckedChange={(c) => selectAll("active", Boolean(c))} />
+                              <span>Aktive Nutzung</span>
+                            </label>
+                            <label className="inline-flex items-center gap-1">
+                              <Checkbox checked={Object.values(basis.matrix).every((m) => m.data)} onCheckedChange={(c) => selectAll("data", Boolean(c))} />
+                              <span>Datenbetroffenheit</span>
+                            </label>
+                          </div>
+
+                          <div className="overflow-auto rounded-lg border bg-white">
+                            <table className="w-full text-sm">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="text-left p-2">Gesellschaft / Betrieb</th>
+                                  <th className="text-left p-2 w-48">Aktive Nutzung</th>
+                                  <th className="text-left p-2 w-56">Datenbetroffenheit</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {ORGS.map((o) => (
+                                  <tr key={o.code} className="border-t">
+                                    <td className="p-2">
+                                      <div className="font-medium">{o.code}</div>
+                                      <div className="text-xs text-gray-500">{o.label}</div>
+                                    </td>
+                                    <td className="p-2">
+                                      <div className="flex items-center gap-2">
+                                        <Checkbox checked={basis.matrix[o.code]?.active || false} onCheckedChange={(c) => setMatrixChecked(o.code, "active", Boolean(c))} />
+                                        <Input
+                                          type="number"
+                                          className="w-24"
+                                          value={basis.matrix[o.code]?.activeCount || 0}
+                                          onChange={(e) => setMatrixCount(o.code, "activeCount", Number(e.target.value) || 0)}
+                                          disabled={!basis.matrix[o.code]?.active}
+                                        />
+                                      </div>
+                                    </td>
+                                    <td className="p-2">
+                                      <div className="flex items-center gap-2">
+                                        <Checkbox checked={basis.matrix[o.code]?.data || false} onCheckedChange={(c) => setMatrixChecked(o.code, "data", Boolean(c))} />
+                                        <Input
+                                          type="number"
+                                          className="w-24"
+                                          value={basis.matrix[o.code]?.dataCount || 0}
+                                          onChange={(e) => setMatrixCount(o.code, "dataCount", Number(e.target.value) || 0)}
+                                          disabled={!basis.matrix[o.code]?.data}
+                                        />
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="flex justify-end gap-2">
+                            <Button variant="danger" onClick={() => setBasis(makeInitialBasis())}>Zurücksetzen</Button>
+                            <Button onClick={() => localStorage.setItem("basis-info", JSON.stringify(basis))}>Speichern</Button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="overflow-auto rounded-lg border bg-white">
+                          <table className="w-full text-sm">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="text-left p-2">Gesellschaft / Betrieb</th>
+                                <th className="text-left p-2 w-48">Aktive Nutzung</th>
+                                <th className="text-left p-2 w-56">Datenbetroffenheit</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="flex justify-end gap-2">
-                        <Button variant="danger" onClick={() => setBasis(makeInitialBasis())}>Zurücksetzen</Button>
-                        <Button onClick={() => localStorage.setItem("basis-info", JSON.stringify(basis))}>Speichern</Button>
-                      </div>
+                            </thead>
+                            <tbody>
+                              {Object.entries(basis.matrix)
+                                .filter(([_, v]) => v.active || v.data)
+                                .map(([code, v]) => {
+                                  const org = ORGS.find((o) => o.code === code);
+                                  if (!org) return null;
+                                  return (
+                                    <tr key={code} className="border-t">
+                                      <td className="p-2">
+                                        <div className="font-medium">{org.code}</div>
+                                        <div className="text-xs text-gray-500">{org.label}</div>
+                                      </td>
+                                      <td className="p-2">{v.active ? v.activeCount : "-"}</td>
+                                      <td className="p-2">{v.data ? v.dataCount : "-"}</td>
+                                    </tr>
+                                  );
+                                })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
