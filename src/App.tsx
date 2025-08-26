@@ -31,7 +31,8 @@ import {
   ChevronDown,
   CheckCircle,
   Paperclip,
-  Pencil
+  Pencil,
+  User
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -41,6 +42,9 @@ import { Textarea } from '@/components/ui/textarea'
 import cn from 'classnames'
 
 import { useUser } from '@/UserContext'
+import ProfileMenu from '@/components/ProfileMenu'
+import Login from '@/pages/Login'
+import AdminPanel from '@/pages/admin/AdminPanel'
 
 // Navigationseinträge
 const NAV_ITEMS = [
@@ -227,8 +231,13 @@ function HighlightedText({ text }: { text: string }) {
 }
 
 export default function ToolReviewMockup() {
-  const { roles: userRoles } = useUser();
+  const { user, roles: userRoles } = useUser();
   const hasRole = (role: string) => userRoles.some((r) => r.name === role);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  if (!user) {
+    return <Login />;
+  }
   // active Tab
   const [activeKey, setActiveKey] = useState(NAV_ITEMS[0].key);
 
@@ -510,14 +519,38 @@ export default function ToolReviewMockup() {
       )
     }));
 
-    return (
-      <>
-        {hasRole('Admin') && <AdminPanel />}
+    if (showAdmin) {
+      return (
         <div className="p-6 bg-gray-200 text-gray-900 min-h-screen">
+          <div className="mb-4">
+            <Button variant="neutral" onClick={() => setShowAdmin(false)}>Zurück</Button>
+          </div>
+          <AdminPanel />
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-6 bg-gray-200 text-gray-900 min-h-screen">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">SYSTEM NAME</h1>
-        <span className="text-gray-600 block mt-1">GRIP-ID: 1234-ABC-15</span>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">SYSTEM NAME</h1>
+          <span className="text-gray-600 block mt-1">GRIP-ID: 1234-ABC-15</span>
+        </div>
+        <div className="relative">
+          <Button variant="neutral" onClick={() => setShowProfileMenu((p) => !p)}>
+            <User className="w-5 h-5" />
+          </Button>
+          {showProfileMenu && (
+            <div className="absolute right-0 mt-2 bg-white rounded shadow z-10">
+              <ProfileMenu
+                onClose={() => setShowProfileMenu(false)}
+                {...(hasRole('Admin') ? { onAdmin: () => { setShowAdmin(true); setShowProfileMenu(false); } } : {})}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Fortschritt */}
@@ -1241,8 +1274,7 @@ export default function ToolReviewMockup() {
           </div>
         </div>
       )}
-        </div>
-      </>
-    );
+    </div>
+  );
 }
 

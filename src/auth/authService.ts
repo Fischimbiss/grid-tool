@@ -15,12 +15,12 @@ export interface User {
   groups: Group[];
 }
 
-const login = async (username: string, password: string): Promise<User> => {
+const login = async (email: string, password: string): Promise<User> => {
   const res = await fetch('/api/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
     throw new Error('Login failed');
