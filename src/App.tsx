@@ -39,6 +39,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import cn from 'classnames'
+import { hasRole } from '@/utils/auth'
 
 // Navigationseinträge
 const NAV_ITEMS = [
@@ -576,40 +577,46 @@ export default function ToolReviewMockup() {
                 {activeKey === "roles" ? (
                   <div className="space-y-4">
                     {/* Add new badge */}
-                    <div className="rounded-xl border bg-white p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="font-semibold">Neue Rolle hinzufügen</div>
-                        <Button size="sm" onClick={addDraftAsRole}>
-                          <Plus className="mr-2" size={16} /> Hinzufügen
-                        </Button>
+                    {hasRole('FSO') || hasRole('Admin') ? (
+                      <div className="rounded-xl border bg-white p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="font-semibold">Neue Rolle hinzufügen</div>
+                          <Button size="sm" onClick={addDraftAsRole}>
+                            <Plus className="mr-2" size={16} /> Hinzufügen
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Nummer</label>
+                            <Input value={draft.number} onChange={(e) => setDraft({ ...draft, number: e.target.value })} placeholder="z.B. TA 2" />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Rollenname im System</label>
+                            <Input value={draft.systemName} onChange={(e) => setDraft({ ...draft, systemName: e.target.value })} placeholder="z.B. Hiring Manager" />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Name im CAIMAN Rollenshop</label>
+                            <Input value={draft.shopName} onChange={(e) => setDraft({ ...draft, shopName: e.target.value })} placeholder="z.B. SKM-DC-..." />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Nutzer der Rolle</label>
+                            <Input value={draft.userName} onChange={(e) => setDraft({ ...draft, userName: e.target.value })} placeholder="z.B. Recruiter" />
+                          </div>
+                          <div className="sm:col-span-2 xl:col-span-2">
+                            <label className="block text-xs text-gray-500 mb-1">Prozessuale Aufgaben (je Zeile)</label>
+                            <Textarea rows={3} value={(draft as any).tasks || ""} onChange={(e) => setDraft({ ...draft, tasks: e.target.value })} placeholder="Eine Aufgabe pro Zeile" />
+                          </div>
+                          <div className="sm:col-span-2 xl:col-span-2">
+                            <label className="block text-xs text-gray-500 mb-1">IT-Berechtigungen [Sichten] (je Zeile)</label>
+                            <Textarea rows={3} value={(draft as any).permissions || ""} onChange={(e) => setDraft({ ...draft, permissions: e.target.value })} placeholder="Eine Berechtigung pro Zeile" />
+                          </div>
+                        </div>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Nummer</label>
-                          <Input value={draft.number} onChange={(e) => setDraft({ ...draft, number: e.target.value })} placeholder="z.B. TA 2" />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Rollenname im System</label>
-                          <Input value={draft.systemName} onChange={(e) => setDraft({ ...draft, systemName: e.target.value })} placeholder="z.B. Hiring Manager" />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Name im CAIMAN Rollenshop</label>
-                          <Input value={draft.shopName} onChange={(e) => setDraft({ ...draft, shopName: e.target.value })} placeholder="z.B. SKM-DC-..." />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Nutzer der Rolle</label>
-                          <Input value={draft.userName} onChange={(e) => setDraft({ ...draft, userName: e.target.value })} placeholder="z.B. Recruiter" />
-                        </div>
-                        <div className="sm:col-span-2 xl:col-span-2">
-                          <label className="block text-xs text-gray-500 mb-1">Prozessuale Aufgaben (je Zeile)</label>
-                          <Textarea rows={3} value={(draft as any).tasks || ""} onChange={(e) => setDraft({ ...draft, tasks: e.target.value })} placeholder="Eine Aufgabe pro Zeile" />
-                        </div>
-                        <div className="sm:col-span-2 xl:col-span-2">
-                          <label className="block text-xs text-gray-500 mb-1">IT-Berechtigungen [Sichten] (je Zeile)</label>
-                          <Textarea rows={3} value={(draft as any).permissions || ""} onChange={(e) => setDraft({ ...draft, permissions: e.target.value })} placeholder="Eine Berechtigung pro Zeile" />
-                        </div>
+                    ) : (
+                      <div className="rounded-xl border bg-gray-50 p-4 text-gray-400">
+                        Keine Berechtigung neue Rollen hinzuzufügen.
                       </div>
-                    </div>
+                    )}
 
                     {/* Rollen-Badges */}
                     <div className="space-y-3">
@@ -631,28 +638,50 @@ export default function ToolReviewMockup() {
                               )}
                             </div>
                             <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title={role.editing ? "Bearbeiten beenden" : "Bearbeiten"}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleEdit(role.id);
-                                }}
-                              >
-                                <Pencil size={16} />
-                              </Button>
-                              <Button
-                                variant="danger"
-                                size="icon"
-                                title="Löschen"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removeRole(role.id);
-                                }}
-                              >
-                                <Trash2 size={16} />
-                              </Button>
+                              {hasRole('FSO') || hasRole('Admin') ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  title={role.editing ? "Bearbeiten beenden" : "Bearbeiten"}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleEdit(role.id);
+                                  }}
+                                >
+                                  <Pencil size={16} />
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  disabled
+                                  title="Keine Berechtigung"
+                                >
+                                  <Pencil size={16} />
+                                </Button>
+                              )}
+                              {hasRole('FSO') || hasRole('Admin') ? (
+                                <Button
+                                  variant="danger"
+                                  size="icon"
+                                  title="Löschen"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeRole(role.id);
+                                  }}
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="danger"
+                                  size="icon"
+                                  disabled
+                                  title="Keine Berechtigung"
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              )}
                               <Button variant="ghost" size="icon">
                                 {role.expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                               </Button>
@@ -708,8 +737,17 @@ export default function ToolReviewMockup() {
                                     </div>
                                   </div>
                                   <div className="flex justify-end gap-2">
-                                    <Button variant="neutral" onClick={() => toggleEdit(role.id)}>Abbrechen</Button>
-                                    <Button onClick={() => toggleEdit(role.id)}>Speichern</Button>
+                                    {hasRole('FSO') || hasRole('Admin') ? (
+                                      <>
+                                        <Button variant="neutral" onClick={() => toggleEdit(role.id)}>Abbrechen</Button>
+                                        <Button onClick={() => toggleEdit(role.id)}>Speichern</Button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Button variant="neutral" disabled>Abbrechen</Button>
+                                        <Button disabled>Speichern</Button>
+                                      </>
+                                    )}
                                   </div>
                                 </div>
                               )}
