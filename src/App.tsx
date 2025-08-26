@@ -835,11 +835,17 @@ export default function ToolReviewMockup() {
                           <div className="flex items-center justify-end gap-2 text-sm">
                             <span className="text-gray-500">Alle:</span>
                             <label className="inline-flex items-center gap-1">
-                              <Checkbox checked={Object.values(basis.matrix).every((m) => m.active)} onCheckedChange={(c) => selectAll("active", Boolean(c))} />
+                              <Checkbox
+                                checked={Object.values(basis.matrix).every((m) => m.active)}
+                                onChange={(e) => selectAll("active", e.target.checked)}
+                              />
                               <span>Aktive Nutzung</span>
                             </label>
                             <label className="inline-flex items-center gap-1">
-                              <Checkbox checked={Object.values(basis.matrix).every((m) => m.data)} onCheckedChange={(c) => selectAll("data", Boolean(c))} />
+                              <Checkbox
+                                checked={Object.values(basis.matrix).every((m) => m.data)}
+                                onChange={(e) => selectAll("data", e.target.checked)}
+                              />
                               <span>Datenbetroffenheit</span>
                             </label>
                           </div>
@@ -862,7 +868,12 @@ export default function ToolReviewMockup() {
                                     </td>
                                     <td className="p-2">
                                       <div className="flex items-center gap-2">
-                                        <Checkbox checked={basis.matrix[o.code]?.active || false} onCheckedChange={(c) => setMatrixChecked(o.code, "active", Boolean(c))} />
+                                        <Checkbox
+                                          checked={basis.matrix[o.code]?.active || false}
+                                          onChange={(e) =>
+                                            setMatrixChecked(o.code, "active", e.target.checked)
+                                          }
+                                        />
                                         <Input
                                           type="number"
                                           className="w-24"
@@ -874,7 +885,12 @@ export default function ToolReviewMockup() {
                                     </td>
                                     <td className="p-2">
                                       <div className="flex items-center gap-2">
-                                        <Checkbox checked={basis.matrix[o.code]?.data || false} onCheckedChange={(c) => setMatrixChecked(o.code, "data", Boolean(c))} />
+                                        <Checkbox
+                                          checked={basis.matrix[o.code]?.data || false}
+                                          onChange={(e) =>
+                                            setMatrixChecked(o.code, "data", e.target.checked)
+                                          }
+                                        />
                                         <Input
                                           type="number"
                                           className="w-24"
@@ -1131,11 +1147,19 @@ export default function ToolReviewMockup() {
                 <Input placeholder="Suchen…" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} />
               </div>
               <div className="flex items-center gap-2">
-                <Checkbox id="onlyUnread" checked={globalOnlyUnread} onCheckedChange={() => setGlobalOnlyUnread(!globalOnlyUnread)} />
+                <Checkbox
+                  id="onlyUnread"
+                  checked={globalOnlyUnread}
+                  onChange={() => setGlobalOnlyUnread(!globalOnlyUnread)}
+                />
                 <label htmlFor="onlyUnread" className="text-sm">nur Ungelesene</label>
               </div>
               <div className="flex items-center gap-2">
-                <Checkbox id="onlyRem" checked={globalOnlyReminders} onCheckedChange={() => setGlobalOnlyReminders(!globalOnlyReminders)} />
+                <Checkbox
+                  id="onlyRem"
+                  checked={globalOnlyReminders}
+                  onChange={() => setGlobalOnlyReminders(!globalOnlyReminders)}
+                />
                 <label htmlFor="onlyRem" className="text-sm flex items-center gap-1"><Bell size={12}/> nur Wiedervorlagen</label>
               </div>
               <div>
