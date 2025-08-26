@@ -583,7 +583,7 @@ export default function ToolReviewMockup() {
                           <Plus className="mr-2" size={16} /> Hinzufügen
                         </Button>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                         <div>
                           <label className="block text-xs text-gray-500 mb-1">Nummer</label>
                           <Input value={draft.number} onChange={(e) => setDraft({ ...draft, number: e.target.value })} placeholder="z.B. TA 2" />
@@ -600,11 +600,11 @@ export default function ToolReviewMockup() {
                           <label className="block text-xs text-gray-500 mb-1">Nutzer der Rolle</label>
                           <Input value={draft.userName} onChange={(e) => setDraft({ ...draft, userName: e.target.value })} placeholder="z.B. Recruiter" />
                         </div>
-                        <div className="md:col-span-2">
+                        <div className="sm:col-span-2 xl:col-span-2">
                           <label className="block text-xs text-gray-500 mb-1">Prozessuale Aufgaben (je Zeile)</label>
                           <Textarea rows={3} value={(draft as any).tasks || ""} onChange={(e) => setDraft({ ...draft, tasks: e.target.value })} placeholder="Eine Aufgabe pro Zeile" />
                         </div>
-                        <div className="md:col-span-2">
+                        <div className="sm:col-span-2 xl:col-span-2">
                           <label className="block text-xs text-gray-500 mb-1">IT-Berechtigungen [Sichten] (je Zeile)</label>
                           <Textarea rows={3} value={(draft as any).permissions || ""} onChange={(e) => setDraft({ ...draft, permissions: e.target.value })} placeholder="Eine Berechtigung pro Zeile" />
                         </div>
@@ -663,7 +663,7 @@ export default function ToolReviewMockup() {
                           {role.expanded && (
                             <div className="px-4 pb-4">
                               {!role.editing ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
                                   <div>
                                     <label className="block text-xs font-medium text-gray-500 mb-1">Rollenbeschreibung – Prozessuale Aufgaben</label>
                                     <ul className="list-disc list-inside space-y-1 bg-gray-50 rounded-md p-3">
@@ -679,7 +679,7 @@ export default function ToolReviewMockup() {
                                 </div>
                               ) : (
                                 <div className="space-y-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                                     <div>
                                       <label className="block text-xs text-gray-500 mb-1">Nummer</label>
                                       <Input value={role.number} onChange={(e) => updateRoleField(role.id, "number", e.target.value)} />
@@ -697,7 +697,7 @@ export default function ToolReviewMockup() {
                                       <Input value={role.userName} onChange={(e) => updateRoleField(role.id, "userName", e.target.value)} />
                                     </div>
                                   </div>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
                                     <div>
                                       <label className="block text-xs text-gray-500 mb-1">Prozessuale Aufgaben (je Zeile)</label>
                                       <Textarea rows={6} value={role.tasks.join("\n")} onChange={(e) => updateRoleList(role.id, "tasks", e.target.value)} />
@@ -722,7 +722,7 @@ export default function ToolReviewMockup() {
                 ) : activeKey === "basis" ? (
                   <div className="space-y-6">
                     {/* BASIS: Stammdaten */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs text-gray-500 mb-1">Name/Kurzbezeichnung des Systems</label>
                         <Input value={basis.shortName} onChange={(e) => updateBasisField("shortName", e.target.value)} placeholder="z.B. CAIMAN" />
@@ -739,7 +739,7 @@ export default function ToolReviewMockup() {
                         <label className="block text-xs text-gray-500 mb-1">T-App-ID/Sol-App-ID (alt: ICTO/COM)</label>
                         <Input value={basis.appId} onChange={(e) => updateBasisField("appId", e.target.value)} placeholder="z.B. T-APP-xxxx / SOL-APP-xxxx" />
                       </div>
-                      <div className="md:col-span-2">
+                      <div className="sm:col-span-2 xl:col-span-2">
                         <label className="block text-xs text-gray-500 mb-1">Kurzbeschreibung</label>
                         <Textarea rows={3} value={basis.shortDescription} onChange={(e) => updateBasisField("shortDescription", e.target.value)} placeholder="Kurzbeschreibung des Systems" />
                       </div>
@@ -938,7 +938,7 @@ export default function ToolReviewMockup() {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                         <div className="flex flex-col">
                           <label className="text-xs text-gray-500 mb-1">Sichtbarkeit</label>
                           <select className="border rounded-md px-2 py-1 bg-white" value={currentDraft.visibility} onChange={(e) => setDraftField("visibility", e.target.value)}>
@@ -1003,8 +1003,8 @@ export default function ToolReviewMockup() {
             </div>
 
             {/* Filterleiste */}
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
-              <div className="md:col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 mb-4">
+              <div className="sm:col-span-2 xl:col-span-2">
                 <Input placeholder="Suchen…" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} />
               </div>
               <div className="flex items-center gap-2">
