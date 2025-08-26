@@ -6,7 +6,7 @@ interface UserContextType {
   roles: Role[];
   groups: Group[];
   activeRole: string | null;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   setActiveRole: (roleId: string) => void;
 }
@@ -31,8 +31,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  const login = async (username: string, password: string) => {
-    const sessionUser = await authService.login(username, password);
+  const login = async (email: string, password: string) => {
+    const sessionUser = await authService.login(email, password);
     setUser(sessionUser);
     setRoles(sessionUser.roles);
     setGroups(sessionUser.groups);

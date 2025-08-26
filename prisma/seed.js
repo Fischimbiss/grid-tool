@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -20,6 +21,21 @@ async function main() {
       { roleId: admin.id, permissionId: write.id },
       { roleId: admin.id, permissionId: del.id },
     ],
+  });
+
+  const max = await prisma.user.create({
+    data: {
+      name: 'Max Mustermann',
+      email: 'max.mustermann@telekom.de',
+      password: await bcrypt.hash('Admin', 10),
+    },
+  });
+
+  await prisma.userRole.create({
+    data: {
+      userId: max.id,
+      roleId: admin.id,
+    },
   });
 }
 
