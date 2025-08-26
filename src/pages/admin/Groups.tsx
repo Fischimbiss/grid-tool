@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type Group = { id: number; name: string }
 
@@ -8,10 +8,25 @@ export default function Groups() {
   const [editing, setEditing] = useState<number | null>(null)
   const [editName, setEditName] = useState('')
 
-  const add = () => {
+  const load = async () => {
+    const res = await fetch('/api/groups')
+    const data = await res.json()
+    setItems(data)
+  }
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  const add = async () => {
     if (!name.trim()) return
-    setItems([...items, { id: Date.now(), name }])
+    await fetch('/api/groups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    })
     setName('')
+    load()
   }
 
   const startEdit = (id: number, current: string) => {
@@ -19,14 +34,22 @@ export default function Groups() {
     setEditName(current)
   }
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editing === null) return
-    setItems(items.map(g => (g.id === editing ? { ...g, name: editName } : g)))
+    await fetch(`/api/groups/${editing}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: editName })
+    })
     setEditing(null)
     setEditName('')
+    load()
   }
 
-  const remove = (id: number) => setItems(items.filter(g => g.id !== id))
+  const remove = async (id: number) => {
+    await fetch(`/api/groups/${id}`, { method: 'DELETE' })
+    load()
+  }
 
   return (
     <div>

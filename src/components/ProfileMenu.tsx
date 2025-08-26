@@ -1,13 +1,12 @@
-import { useContext } from 'react';
-import { UserContext } from '@/UserContext';
 import { Button } from '@/components/ui/button';
+import { useUser } from '@/UserContext';
 
 interface ProfileMenuProps {
   onClose?: () => void;
 }
 
 export function ProfileMenu({ onClose }: ProfileMenuProps) {
-  const { username, roles, activeRole, setActiveRole, logout } = useContext(UserContext);
+  const { user, roles, activeRole, setActiveRole, logout } = useUser();
 
   const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setActiveRole(e.target.value);
@@ -21,17 +20,17 @@ export function ProfileMenu({ onClose }: ProfileMenuProps) {
 
   return (
     <div className="flex flex-col gap-2 p-4">
-      <div className="font-semibold">{username}</div>
+      <div className="font-semibold">{user?.name}</div>
       <label className="text-sm">
         Rolle
         <select
           className="mt-1 block w-full border rounded"
-          value={activeRole}
+          value={activeRole ?? ''}
           onChange={handleRoleChange}
         >
           {roles.map((r) => (
-            <option key={r} value={r}>
-              {r}
+            <option key={r.id} value={r.id}>
+              {r.name}
             </option>
           ))}
         </select>

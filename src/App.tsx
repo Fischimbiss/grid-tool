@@ -40,7 +40,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import cn from 'classnames'
 
-import { hasRole } from '@/utils/auth'
+import { useUser } from '@/UserContext'
 
 // Navigationseinträge
 const NAV_ITEMS = [
@@ -227,6 +227,8 @@ function HighlightedText({ text }: { text: string }) {
 }
 
 export default function ToolReviewMockup() {
+  const { roles: userRoles } = useUser();
+  const hasRole = (role: string) => userRoles.some((r) => r.name === role);
   // active Tab
   const [activeKey, setActiveKey] = useState(NAV_ITEMS[0].key);
 

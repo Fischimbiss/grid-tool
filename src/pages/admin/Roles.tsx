@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 type Role = { id: number; name: string }
 
@@ -8,10 +8,25 @@ export default function Roles() {
   const [editing, setEditing] = useState<number | null>(null)
   const [editName, setEditName] = useState('')
 
-  const add = () => {
+  const load = async () => {
+    const res = await fetch('/api/roles')
+    const data = await res.json()
+    setItems(data)
+  }
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  const add = async () => {
     if (!name.trim()) return
-    setItems([...items, { id: Date.now(), name }])
+    await fetch('/api/roles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    })
     setName('')
+    load()
   }
 
   const startEdit = (id: number, current: string) => {
@@ -19,14 +34,22 @@ export default function Roles() {
     setEditName(current)
   }
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editing === null) return
-    setItems(items.map(r => (r.id === editing ? { ...r, name: editName } : r)))
+    await fetch(`/api/roles/${editing}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: editName })
+    })
     setEditing(null)
     setEditName('')
+    load()
   }
 
-  const remove = (id: number) => setItems(items.filter(r => r.id !== id))
+  const remove = async (id: number) => {
+    await fetch(`/api/roles/${id}`, { method: 'DELETE' })
+    load()
+  }
 
   return (
     <div>
