@@ -508,7 +508,7 @@ export default function ToolReviewMockup() {
                       <button
                         onClick={() => setActiveKey(key)}
                         className={`flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left transition ${
-                          key === activeKey ? "bg-pink-50 text-pink-700 ring-1 ring-pink-200" : "hover:bg-gray-100"
+                          key === activeKey ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200" : "hover:bg-gray-100"
                         }`}
                       >
                         <Icon size={14} />
@@ -551,7 +551,7 @@ export default function ToolReviewMockup() {
                     </span>
                   )}
                   {totalUnread > 0 && (
-                    <span className="text-xs rounded-full px-2 py-0.5 bg-pink-600 text-white">{totalUnread} neu</span>
+                    <span className="text-xs rounded-full px-2 py-0.5 bg-blue-600 text-white">{totalUnread} neu</span>
                   )}
                 </div>
               </div>
@@ -634,7 +634,6 @@ export default function ToolReviewMockup() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8"
                                 title={role.editing ? "Bearbeiten beenden" : "Bearbeiten"}
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -644,9 +643,8 @@ export default function ToolReviewMockup() {
                                 <Pencil size={16} />
                               </Button>
                               <Button
-                                variant="ghost"
+                                variant="danger"
                                 size="icon"
-                                className="h-8 w-8 text-red-600 hover:text-red-700"
                                 title="Löschen"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -655,7 +653,7 @@ export default function ToolReviewMockup() {
                               >
                                 <Trash2 size={16} />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon">
                                 {role.expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                               </Button>
                             </div>
@@ -710,7 +708,7 @@ export default function ToolReviewMockup() {
                                     </div>
                                   </div>
                                   <div className="flex justify-end gap-2">
-                                    <Button variant="outline" onClick={() => toggleEdit(role.id)}>Abbrechen</Button>
+                                    <Button variant="neutral" onClick={() => toggleEdit(role.id)}>Abbrechen</Button>
                                     <Button onClick={() => toggleEdit(role.id)}>Speichern</Button>
                                   </div>
                                 </div>
@@ -802,7 +800,7 @@ export default function ToolReviewMockup() {
                       </div>
 
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setBasis(makeInitialBasis())}>Zurücksetzen</Button>
+                        <Button variant="danger" onClick={() => setBasis(makeInitialBasis())}>Zurücksetzen</Button>
                         <Button onClick={() => localStorage.setItem("basis-info", JSON.stringify(basis))}>Speichern</Button>
                       </div>
                     </div>
@@ -830,28 +828,28 @@ export default function ToolReviewMockup() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-500">Ungelesen: {unreadBySection[activeKey] || 0}</span>
                     <Button
-                      variant="outline"
+                      variant="neutral"
                       size="sm"
                       onClick={() => setExpandedCommentSections((prev) => ({ ...prev, [activeKey]: !prev[activeKey] }))}
                     >
                       {expandedCommentSections[activeKey] ? "Kommentare ausblenden" : `Kommentare anzeigen (${(commentsBySection[activeKey] || []).length})`}
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="neutral"
                       size="sm"
                       onClick={() => setCollapsedComments((prev) => ({ ...prev, [activeKey]: true }))}
                       title="Alle Kommentare kompakt anzeigen"
                     >Alle einklappen</Button>
                     {collapsedComments[activeKey] && (
                       <Button
-                        variant="ghost"
+                        variant="neutral"
                         size="sm"
                         onClick={() => setCollapsedComments((prev) => ({ ...prev, [activeKey]: false }))}
                         title="Alle Kommentare wieder voll anzeigen"
                       >Alle ausklappen</Button>
                     )}
                     {unreadBySection[activeKey] > 0 && (
-                      <Button variant="ghost" size="sm" onClick={() => markAllReadInSection(activeKey)}>Alle als gelesen markieren</Button>
+                      <Button variant="neutral" size="sm" onClick={() => markAllReadInSection(activeKey)}>Alle als gelesen markieren</Button>
                     )}
                   </div>
                 </div>
@@ -907,10 +905,10 @@ export default function ToolReviewMockup() {
                                 </div>
                               )}
                               <div className="mt-2 flex items-center gap-2">
-                                <Button size="sm" variant="ghost" onClick={() => toggleRead(activeKey, c.id)}>
+                                <Button size="sm" variant="neutral" onClick={() => toggleRead(activeKey, c.id)}>
                                   {c.read ? "Als ungelesen markieren" : "Als gelesen markieren"}
                                 </Button>
-                                <Button size="sm" variant="ghost" onClick={() => addReply(activeKey, c.id, "@Max Danke! #HR")}>Antworten</Button>
+                                <Button size="sm" variant="neutral" onClick={() => addReply(activeKey, c.id, "@Max Danke! #HR")}>Antworten</Button>
                               </div>
                             </div>
                           </div>
@@ -929,7 +927,7 @@ export default function ToolReviewMockup() {
                           <div className="flex flex-wrap gap-2">
                             {mention.options.length ? (
                               mention.options.map((opt) => (
-                                <button key={opt} className="px-2 py-1 rounded-md bg-white border hover:bg-gray-100" onClick={() => insertMention(opt)}>
+                                <button key={opt} className="px-2 py-1 rounded-md bg-white border text-gray-700 hover:bg-gray-100" onClick={() => insertMention(opt)}>
                                   {mention.type}{opt}
                                 </button>
                               ))
@@ -971,7 +969,7 @@ export default function ToolReviewMockup() {
                       </div>
 
                       <div className="flex gap-2 justify-end">
-                        <Button variant="outline" onClick={() => setCommentDrafts((prev) => ({ ...prev, [activeKey]: { text: "", visibility: VISIBILITY.ALL } }))}>Zurücksetzen</Button>
+                        <Button variant="neutral" onClick={() => setCommentDrafts((prev) => ({ ...prev, [activeKey]: { text: "", visibility: VISIBILITY.ALL } }))}>Zurücksetzen</Button>
                         <Button
                           onClick={() => {
                             if (!currentDraft.text?.trim()) return;
@@ -1001,7 +999,7 @@ export default function ToolReviewMockup() {
                 <MessageSquare />
                 <h3 className="text-lg font-semibold">Alle Kommentare</h3>
               </div>
-              <Button variant="outline" onClick={() => setShowGlobalComments(false)}><X size={16} className="mr-1"/> Schließen</Button>
+              <Button variant="neutral" onClick={() => setShowGlobalComments(false)}><X size={16} className="mr-1"/> Schließen</Button>
             </div>
 
             {/* Filterleiste */}
@@ -1080,10 +1078,10 @@ export default function ToolReviewMockup() {
                       <td className="p-2 align-top">
                         <div className="flex justify-end gap-2">
                           <Button size="sm" variant="secondary" onClick={() => jumpToComment(sectionKey, c.id)}>Öffnen</Button>
-                          <Button size="sm" variant="outline" onClick={() => toggleRead(sectionKey, c.id)}>
+                          <Button size="sm" variant="neutral" onClick={() => toggleRead(sectionKey, c.id)}>
                             {c.read ? "Ungelesen" : "Gelesen"}
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => addReply(sectionKey, c.id, "Antwort aus Übersicht…")}>Antworten</Button>
+                          <Button size="sm" variant="neutral" onClick={() => addReply(sectionKey, c.id, "Antwort aus Übersicht…")}>Antworten</Button>
                         </div>
                       </td>
                     </tr>
