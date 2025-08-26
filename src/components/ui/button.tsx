@@ -36,11 +36,18 @@ export const Button = React.forwardRef<HTMLButtonElement, Props>(
     <button
       ref={ref}
       className={cn(
+ codex/optimize-usability-and-accessibility-wrp6sy
         'inline-flex items-center gap-2 rounded-md font-medium',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
         'disabled:opacity-60 disabled:pointer-events-none',
         variantClasses[variant],
         sizeClasses[size],
+
+        'inline-flex items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium',
+        'bg-pink-600 hover:bg-pink-500 text-white',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-pink-500',
+        'disabled:opacity-60 disabled:pointer-events-none',
+ main
         className
       )}
       {...props}
