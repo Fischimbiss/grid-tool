@@ -39,6 +39,8 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import cn from 'classnames'
+import AdminPanel from '@/pages/admin/AdminPanel'
+import { hasRole } from '@/auth'
 
 // Navigationseinträge
 const NAV_ITEMS = [
@@ -475,8 +477,10 @@ export default function ToolReviewMockup() {
       matrix: Object.fromEntries(Object.entries(b.matrix).map(([k, v]) => [k, { ...v, [type]: checked }]))
     }));
 
-  return (
-    <div className="p-6 bg-gray-200 text-gray-900 min-h-screen">
+    return (
+      <>
+        {hasRole('Admin') && <AdminPanel />}
+        <div className="p-6 bg-gray-200 text-gray-900 min-h-screen">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold">SYSTEM NAME</h1>
@@ -1092,7 +1096,8 @@ export default function ToolReviewMockup() {
           </div>
         </div>
       )}
-    </div>
-  );
+        </div>
+      </>
+    );
 }
 
