@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 5173",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:seed": "node prisma/seed.js"
     "server": "node backend/server.js"
   },
   "dependencies": {
+    "@prisma/client": "^6.14.0",
     "classnames": "^2.5.1",
     "lucide-react": "^0.462.0",
     "react": "^18.3.1",
@@ -24,6 +27,10 @@
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.4",
-    "vite": "^5.4.2"
+    "vite": "^5.4.2",
+    "prisma": "^6.14.0"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }
