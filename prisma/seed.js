@@ -39,17 +39,22 @@ async function main() {
   })
 
   // RolePermissions
-  await prisma.rolePermission.createMany({
-    data: [
+  await Promise.all(
+    [
       { roleId: br.id, permissionId: read.id },
       { roleId: fso.id, permissionId: read.id },
       { roleId: fso.id, permissionId: write.id },
       { roleId: admin.id, permissionId: read.id },
       { roleId: admin.id, permissionId: write.id },
       { roleId: admin.id, permissionId: del.id },
-    ],
-    skipDuplicates: true,
-  })
+    ].map((rp) =>
+      prisma.rolePermission.upsert({
+        where: { roleId_permissionId: rp },
+        update: {},
+        create: rp,
+      })
+    )
+  )
 
   // User
   const hashed = await bcrypt.hash('Admin', 10)
@@ -64,9 +69,10 @@ async function main() {
   })
 
   // UserRole
-  await prisma.userRole.createMany({
-    data: [{ userId: max.id, roleId: admin.id }],
-    skipDuplicates: true,
+  await prisma.userRole.upsert({
+    where: { userId_roleId: { userId: max.id, roleId: admin.id } },
+    update: {},
+    create: { userId: max.id, roleId: admin.id },
   })
 
   console.log('✅ Seed abgeschlossen')
