@@ -7,9 +7,7 @@
 }
 
 files.skyserver.online {
-  basicauth {
-    bjoern "$2a$10$57ht3xGKprEjkvF4lOG/R.z30F260EzlJhDZixvUt5QwnRf4kg8bu"   # Platzhalter (siehe unten)
-  }
+  # Authentication is handled by Filebrowser itself (see docker-compose.yml)
   reverse_proxy filebrowser:80
 }
 
