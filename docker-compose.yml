@@ -30,8 +30,8 @@ services:
         - /:/srv 
         - filebrowser_db:/database
         - filebrowser_config:/config
-      ports:
-        - "8081:80"   # im Browser: http://SERVER-IP:8081
+      # ports:
+      #  - "8081:80"    im Browser: http://SERVER-IP:8081
 
 volumes:
   caddy-data:
