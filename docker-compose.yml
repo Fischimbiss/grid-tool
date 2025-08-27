@@ -27,7 +27,7 @@ services:
       restart: unless-stopped
       # -> nur den Projektordner zeigen (sicherer). Für kompletten Server siehe Variante B.
       volumes:
-        - /root/grid-tool:/srv
+        - /:/srv 
         - filebrowser_db:/database
         - filebrowser_config:/config
       ports:
