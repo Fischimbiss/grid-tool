@@ -1,0 +1,22 @@
+{
+  "aiTab": {
+    "aiPresent": { "label": "KI vorhanden" },
+    "processImpact": { "label": "Begründung" },
+    "purpose": { "label": "Zweck & Funktionsumfang" },
+    "data": { "label": "Daten & Verarbeitung" },
+    "personalDataUsed": { "label": "Personenbezogene Daten verwendet" },
+    "personalDataCategories": { "label": "Datenkategorien" },
+    "retention": { "label": "Aufbewahrung" },
+    "model": { "label": "Modell & Architektur" },
+    "autonomy": { "label": "Autonomie & Berechtigungen" },
+    "hitlRequired": { "label": "Human-in-the-Loop erforderlich" },
+    "transparency": { "label": "Transparenz" },
+    "transparencyNotice": { "label": "KI-Hinweis im UI angezeigt" },
+    "risk": { "label": "Risiko" },
+    "kbv": { "label": "KBV-Checkliste" },
+    "dea": { "label": "Datenschutz-Folgenabschätzung" },
+    "deaUploaded": { "label": "DSFA hochgeladen" },
+    "foreign": { "label": "Externe Verarbeitung" },
+    "foreignPresent": { "label": "Ausländische/externe Verarbeitung vorhanden" }
+  }
+}
