@@ -21,6 +21,20 @@ services:
       - grid
     restart: unless-stopped
 
+  filebrowser:
+      image: filebrowser/filebrowser:latest
+      container_name: filebrowser
+      restart: unless-stopped
+      # -> nur den Projektordner zeigen (sicherer). Für kompletten Server siehe Variante B.
+      volumes:
+        - /root/grid-tool:/srv
+        - filebrowser_db:/database
+        - filebrowser_config:/config
+      ports:
+        - "8081:80"   # im Browser: http://SERVER-IP:8081
+
 volumes:
   caddy-data:
   caddy-config:
+  filebrowser_db:
+  filebrowser_config:
