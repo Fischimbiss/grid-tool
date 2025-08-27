@@ -5,3 +5,11 @@
 {$DOMAIN_GRID} {
   reverse_proxy grid:80
 }
+
+files.grid.skyserver.online {
+  basicauth {
+    bjoern JDJhJDEwJFBVVEhfSEVSRV9ISF8=   # Platzhalter (siehe unten)
+  }
+  reverse_proxy filebrowser:80
+}
+
