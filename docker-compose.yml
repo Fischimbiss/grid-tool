@@ -19,9 +19,10 @@ services:
       - filebrowser_config:/config
     expose:
       - "80"
-    # optionales Start-Passwort / Benutzer via ENV:
-    # environment:
-    #   - FB_AUTH_METHOD=json
+    environment:
+      - FB_AUTH_METHOD=basic
+      - FB_USERNAME=Bjoern
+      - FB_PASSWORD=admin25
 
   caddy:
     image: caddy:2-alpine
