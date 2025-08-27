@@ -8,7 +8,7 @@
 
 files.skyserver.online {
   basicauth {
-    bjoern JDJhJDEwJFBVVEhfSEVSRV9ISF8=   # Platzhalter (siehe unten)
+    bjoern $2a$14$5JHix6L3PQkiKMLbtBv8W.6k2SPDqg2sXGZEefg/Ay40XXi./IazG   # Platzhalter (siehe unten)
   }
   reverse_proxy filebrowser:80
 }
