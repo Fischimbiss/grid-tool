@@ -1,9 +1,9 @@
-# Build-Phase
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
-COPY . .
+RUN npm ci
+COPY . .       # <<– auch prisma/ und Seed‑Skripte werden übernommen
+RUN npx prisma generate      # Prisma Client erzeugen
 RUN npm run build
 
 # Serve-Phase
