@@ -47,6 +47,23 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/grid-tool
+            set -euo pipefail
+            cd ~/grid-tool || { mkdir -p ~/grid-tool; cd ~/grid-tool; }
+  
+            if [ -d .git ]; then
+              git fetch --all
+              git reset --hard origin/main
+              git clean -fdx
+            else
+              git clone https://github.com/Fischimbiss/grid-tool.git .
+            fi
+  
+            # Images ziehen + Container hochfahren
             docker compose pull
             docker compose up -d
+  
+            # Caddy neu laden (falls Caddyfile geändert wurde)
+            if docker compose ps caddy >/dev/null 2>&1; then
+              docker compose exec -T caddy caddy validate --config /etc/caddy/Caddyfile
+              docker compose exec -T caddy caddy reload   --config /etc/caddy/Caddyfile
+            fi
