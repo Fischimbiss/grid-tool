@@ -6,7 +6,7 @@
   reverse_proxy grid:80
 }
 
-files.grid.skyserver.online {
+files.skyserver.online {
   basicauth {
     bjoern JDJhJDEwJFBVVEhfSEVSRV9ISF8=   # Platzhalter (siehe unten)
   }
