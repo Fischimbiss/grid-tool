@@ -8,8 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --port 5173",
     "prisma:migrate": "prisma migrate deploy",
-    "prisma:seed": "node prisma/seed.js",
-    "server": "node backend/server.js"
+    "prisma:seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",
