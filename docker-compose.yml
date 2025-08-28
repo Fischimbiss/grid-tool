@@ -14,15 +14,14 @@ services:
     # Sicherheit: zeig NICHT die ganze Root, sondern einen Ordner
     # Lege ./files am Host an und pack da rein, was du freigeben willst
     volumes:
+      - ./filebrowser-init.sh:/filebrowser-init.sh:ro
       - /:/srv
       - filebrowser_db:/database
       - filebrowser_config:/config
     expose:
       - "80"
-    environment:
-      - FB_AUTH_METHOD=basic
-      - FB_USERNAME=Bjoern
-      - FB_PASSWORD=admin25
+
+    entrypoint: /filebrowser-init.sh
 
   caddy:
     image: caddy:2-alpine
