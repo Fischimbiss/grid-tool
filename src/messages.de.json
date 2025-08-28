@@ -1,10 +1,20 @@
 {
   "aiTab": {
-    "aiPresent": { "label": "KI vorhanden" },
+    "aiPresent": {
+      "label": "KI vorhanden",
+      "description": "Geben Sie an, ob im System KI-Funktionalität genutzt wird.",
+      "checkbox": "KI vorhanden"
+    },
     "processImpact": { "label": "Begründung" },
-    "purpose": { "label": "Zweck & Funktionsumfang" },
-    "data": { "label": "Daten & Verarbeitung" },
-    "personalDataUsed": { "label": "Personenbezogene Daten verwendet" },
+    "purpose": {
+      "label": "Zweck & Funktionsumfang",
+      "description": "Beschreiben Sie kurz Zweck und Funktionsumfang der eingesetzten KI."
+    },
+    "data": {
+      "label": "Daten & Verarbeitung",
+      "description": "Erfassen Sie, ob und welche Beschäftigtendaten verarbeitet werden."
+    },
+    "personalDataUsed": { "label": "Beschäftigtendaten werden verarbeitet" },
     "personalDataCategories": {
       "label": "Datenkategorien",
       "placeholder": "Kategorie1, Kategorie2"
@@ -17,16 +27,19 @@
     },
     "model": {
       "label": "Modell & Architektur",
-      "type": { "placeholder": "Typ" },
-      "version": { "placeholder": "Version" },
-      "provider": { "placeholder": "Anbieter" },
+      "description": "Nennen Sie Details zum KI-Modell und seiner Bereitstellung.",
+      "type": { "label": "Modelltyp", "placeholder": "Typ" },
+      "version": { "label": "Version", "placeholder": "Version" },
+      "provider": { "label": "Anbieter", "placeholder": "Anbieter" },
       "deployment": {
+        "label": "Bereitstellung",
         "onprem": "On-Premise",
         "saas": "SaaS",
         "cloud": "Cloud"
       },
-      "region": { "placeholder": "Region" },
+      "region": { "label": "Region", "placeholder": "Region" },
       "adaptation": {
+        "label": "Anpassung",
         "prompting": "Prompting",
         "finetune": "Feintuning",
         "rag": "RAG",
@@ -35,51 +48,62 @@
     },
     "autonomy": {
       "label": "Autonomie & Berechtigungen",
+      "description": "Bestimmen Sie den Autonomiegrad der KI und erforderliche Berechtigungen.",
       "options": {
         "advice": "Unterstützend",
         "partial": "Teilweise",
         "autonomous": "Autonom"
       }
     },
-    "hitlRequired": { "label": "Human-in-the-Loop erforderlich" },
-    "hitl": { "thresholds": { "placeholder": "Schwellenwerte" } },
-    "permissionDimensions": { "placeholder": "Berechtigungsdimensionen" },
-    "transparency": { "label": "Transparenz" },
+    "hitlRequired": {
+      "label": "Menschliche Beteiligung (Human-in-the-Loop) erforderlich"
+    },
+    "hitl": {
+      "thresholds": {
+        "label": "Schwellenwerte",
+        "placeholder": "Schwellenwerte"
+      }
+    },
+    "permissionDimensions": {
+      "label": "Berechtigungsdimensionen",
+      "placeholder": "Berechtigungsdimensionen"
+    },
+    "transparency": {
+      "label": "Transparenz",
+      "description": "Wie wird Transparenz gegenüber Nutzer*innen sichergestellt?"
+    },
     "transparencyNotice": {
       "label": "KI-Hinweis im UI angezeigt",
-      "artifactLink": { "placeholder": "Link" }
+      "artifactLink": { "label": "Link zum Hinweis", "placeholder": "Link" }
     },
     "risk": {
       "label": "Risiko",
+      "description": "Bewerten Sie das Risiko gemäß EU AI Act und Konzernklassifizierung.",
       "eu_ai_act": {
+        "label": "Einstufung nach EU AI Act",
         "minimal": "Minimal",
         "limited": "Begrenzt",
         "high": "Hoch",
         "prohibited": "Verboten"
       },
       "corp_class": {
+        "label": "Konzernklassifizierung",
         "low": "Niedrig",
         "medium": "Mittel",
         "high": "Hoch"
       },
-      "justification": { "placeholder": "Begründung" }
-    },
-    "kbv": {
-      "label": "KBV-Checkliste",
-      "no_perf_control": "Keine Leistungskontrolle",
-      "no_exports": "Keine Exporte",
-      "need_to_know": "Need-to-know-Prinzip",
-      "test_data_anonymized": "Testdaten anonymisiert",
-      "public_data_no_perf_insights": "Öffentliche Daten ohne Leistungsbezug"
+      "justification": {
+        "label": "Begründung",
+        "placeholder": "Begründung"
+      }
     },
     "dea": {
-      "label": "Datenschutz-Folgenabschätzung",
-      "date": { "placeholder": "Datum" },
-      "link": { "placeholder": "Link" }
+      "label": "Digital Ethics Assessment (DEA)",
+      "description": "Dokumentieren Sie das Ergebnis des Digital Ethics Assessments.",
+      "date": { "label": "Datum", "placeholder": "Datum" },
+      "file": { "label": "Dokument anhängen" }
     },
-    "deaUploaded": { "label": "DSFA hochgeladen" },
-    "foreign": { "label": "Externe Verarbeitung" },
-    "foreignPresent": { "label": "Ausländische/externe Verarbeitung vorhanden" },
+    "deaCompleted": { "label": "DEA abgeschlossen" },
     "submit": "Absenden"
   }
 }
