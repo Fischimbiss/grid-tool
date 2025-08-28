@@ -42,24 +42,13 @@ export const aiSchema = z.object({
     justification: z.string(),
   }),
   dea: z.object({
-    uploaded: z.boolean(),
+    completed: z.boolean(),
     date: z.string(),
-    link: z.string().url().optional(),
+    file: z.any().optional(),
   }),
   monitoring: z.object({
     metrics: z.array(z.enum(['accuracy', 'fairness', 'drift'])),
     eval_cadence: z.string().optional(),
-  }),
-  kbv_checks: z.object({
-    no_perf_control: z.boolean(),
-    no_exports: z.boolean(),
-    need_to_know: z.boolean(),
-    test_data_anonymized: z.boolean(),
-    public_data_no_perf_insights: z.boolean(),
-  }),
-  foreign_external_processing: z.object({
-    present: z.boolean(),
-    notes: z.string().optional(),
   }),
 }).superRefine((data, ctx) => {
   if (data.employee_interaction) {
@@ -98,8 +87,8 @@ export const aiSchema = z.object({
     }
   }
 
-  if (!data.dea.uploaded) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['dea', 'uploaded'], message: 'dea must be uploaded' });
+  if (!data.dea.completed) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['dea', 'completed'], message: 'dea must be completed' });
   }
 });
 

@@ -13,10 +13,8 @@ describe('aiSchema validation', () => {
       hitl: { required: false },
       transparency_notice: { required: false },
       risk: { eu_ai_act: 'minimal', corp_class: 'low', justification: 'j' },
-      dea: { uploaded: true, date: '2024-01-01' },
+      dea: { completed: true, date: '2024-01-01' },
       monitoring: { metrics: ['accuracy'] },
-      kbv_checks: { no_perf_control: true, no_exports: true, need_to_know: true, test_data_anonymized: true, public_data_no_perf_insights: true },
-      foreign_external_processing: { present: false },
     });
     expect(res.success).toBe(false);
   });
@@ -35,10 +33,8 @@ describe('aiSchema validation', () => {
       hitl: { required: false },
       transparency_notice: { required: false },
       risk: { eu_ai_act: 'minimal', corp_class: 'low', justification: 'j' },
-      dea: { uploaded: true, date: '2024-01-01' },
+      dea: { completed: true, date: '2024-01-01' },
       monitoring: { metrics: ['accuracy'] },
-      kbv_checks: { no_perf_control: true, no_exports: true, need_to_know: true, test_data_anonymized: true, public_data_no_perf_insights: true },
-      foreign_external_processing: { present: false },
     });
     expect(res.success).toBe(false);
   });
@@ -55,15 +51,13 @@ describe('aiSchema validation', () => {
       hitl: { required: false },
       transparency_notice: { required: false },
       risk: { eu_ai_act: 'high', corp_class: 'high', justification: 'j' },
-      dea: { uploaded: true, date: '2024-01-01' },
+      dea: { completed: true, date: '2024-01-01' },
       monitoring: { metrics: ['accuracy'] },
-      kbv_checks: { no_perf_control: true, no_exports: true, need_to_know: true, test_data_anonymized: true, public_data_no_perf_insights: true },
-      foreign_external_processing: { present: false },
     });
     expect(res.success).toBe(false);
   });
 
-  it('requires dea uploaded', () => {
+  it('requires dea completed', () => {
     const res = aiSchema.safeParse({
       ai_present: true,
       purpose: 'x',
@@ -75,10 +69,8 @@ describe('aiSchema validation', () => {
       hitl: { required: false },
       transparency_notice: { required: false },
       risk: { eu_ai_act: 'minimal', corp_class: 'low', justification: 'j' },
-      dea: { uploaded: false, date: '2024-01-01' },
+      dea: { completed: false, date: '2024-01-01' },
       monitoring: { metrics: ['accuracy'] },
-      kbv_checks: { no_perf_control: true, no_exports: true, need_to_know: true, test_data_anonymized: true, public_data_no_perf_insights: true },
-      foreign_external_processing: { present: false },
     });
     expect(res.success).toBe(false);
   });
@@ -95,11 +87,9 @@ describe('aiSchema validation', () => {
       hitl: { required: true },
       transparency_notice: { required: false },
       risk: { eu_ai_act: 'high', corp_class: 'high', justification: 'j' },
-      dea: { uploaded: true, date: '2024-01-01' },
+      dea: { completed: true, date: '2024-01-01' },
       monitoring: { metrics: ['accuracy', 'fairness'], eval_cadence: 'm' },
       permission_dimensions: 'role',
-      kbv_checks: { no_perf_control: true, no_exports: true, need_to_know: true, test_data_anonymized: true, public_data_no_perf_insights: true },
-      foreign_external_processing: { present: false },
     });
     expect(res.success).toBe(true);
   });
