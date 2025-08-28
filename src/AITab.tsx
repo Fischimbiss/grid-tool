@@ -9,7 +9,7 @@ import { RichTextarea } from './components/ui/rich-textarea';
 import { Button } from './components/ui/button';
 import { t } from "./i18n";
 import { Select } from './components/ui/select';
-import { Card } from './components/ui/card';
+import CollapsibleCard from './components/ui/collapsible-card';
 
 interface Props {
   lastSnapshot?: Partial<AiFormData>;
@@ -72,30 +72,25 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      <Card className="space-y-2">
-        <h2>A: {t("aiTab.aiPresent.label")}</h2>
+      <CollapsibleCard title={`A: ${t("aiTab.aiPresent.label")}`}>
         <p>{t("aiTab.aiPresent.description")}</p>
         <label className="flex items-center gap-2">
           <Checkbox {...form.register('ai_present')} /> {t("aiTab.aiPresent.checkbox")}
         </label>
-      </Card>
+      </CollapsibleCard>
       {!aiPresent && (
-        <Card className="space-y-2">
-          <label>{t("aiTab.processImpact.label")}</label>
+        <CollapsibleCard title={t("aiTab.processImpact.label")}>
           <Textarea maxLength={600} {...form.register('process_impact')} />
-        </Card>
+        </CollapsibleCard>
       )}
       {aiPresent && (
         <>
-          <Card className="space-y-2">
-            <h2>B: {t("aiTab.purpose.label")}</h2>
+          <CollapsibleCard title={`B: ${t("aiTab.purpose.label")}`}>
             <p>{t("aiTab.purpose.description")}</p>
-
             <Textarea maxLength={600} {...form.register('purpose')} />
-          </Card>
+          </CollapsibleCard>
 
-          <Card className="space-y-2">
-            <h2>C: {t("aiTab.data.label")}</h2>
+          <CollapsibleCard title={`C: ${t("aiTab.data.label")}`}>
             <p>{t("aiTab.data.description")}</p>
             <label className="flex items-center gap-2">
               <Checkbox {...form.register('personal_data_used')} /> {t("aiTab.personalDataUsed.label")}
@@ -120,10 +115,9 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
                 </div>
               </div>
             )}
-          </Card>
+          </CollapsibleCard>
 
-          <Card className="space-y-2">
-            <h2>D: {t("aiTab.model.label")}</h2>
+          <CollapsibleCard title={`D: ${t("aiTab.model.label")}`}>
             <p>{t("aiTab.model.description")}</p>
             <label>{t("aiTab.model.type.label")}</label>
             <Input
@@ -158,10 +152,9 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
               <option value="rag">{t("aiTab.model.adaptation.rag")}</option>
               <option value="other">{t("aiTab.model.adaptation.other")}</option>
             </Select>
-          </Card>
+          </CollapsibleCard>
 
-          <Card className="space-y-2">
-            <h2>E: {t("aiTab.autonomy.label")}</h2>
+          <CollapsibleCard title={`E: ${t("aiTab.autonomy.label")}`}>
             <p>{t("aiTab.autonomy.description")}</p>
             <div className="space-y-1">
               <label className="flex items-center gap-1">
@@ -203,10 +196,9 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
               />
               <p className="text-sm text-neutral-600">{t("aiTab.permissionDimensions.help")}</p>
             </div>
-          </Card>
+          </CollapsibleCard>
 
-          <Card className="space-y-2">
-            <h2>F: {t("aiTab.transparency.label")}</h2>
+          <CollapsibleCard title={`F: ${t("aiTab.transparency.label")}`}>
             <p>{t("aiTab.transparency.description")}</p>
             <label className="flex items-center gap-2">
               <Checkbox {...form.register('transparency_notice.required')} /> {t("aiTab.transparencyNotice.label")}
@@ -233,10 +225,9 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
                 />
               )}
             />
-          </Card>
+          </CollapsibleCard>
 
-          <Card className="space-y-2">
-            <h2>G: {t("aiTab.risk.label")}</h2>
+          <CollapsibleCard title={`G: ${t("aiTab.risk.label")}`}>
             <p>{t("aiTab.risk.description")}</p>
             <label>{t("aiTab.risk.eu_ai_act.label")}</label>
             <Select {...form.register('risk.eu_ai_act')}>
@@ -262,10 +253,9 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
                 />
               )}
             />
-          </Card>
+          </CollapsibleCard>
 
-          <Card className="space-y-2">
-            <h2>H: {t("aiTab.dea.label")}</h2>
+          <CollapsibleCard title={`H: ${t("aiTab.dea.label")}`}>
             <p>{t("aiTab.dea.description")}</p>
             <label className="flex items-center gap-2">
               <Checkbox {...form.register('dea.completed')} /> {t("aiTab.deaCompleted.label")}
@@ -277,7 +267,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
             />
             <label>{t("aiTab.dea.file.label")}</label>
             <Input type="file" {...form.register('dea.file')} />
-          </Card>
+          </CollapsibleCard>
 
           <aside className="p-2 border">
             <h3 className="font-semibold">Maßnahmenempfehlung</h3>
