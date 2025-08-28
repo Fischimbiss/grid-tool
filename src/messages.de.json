@@ -5,18 +5,82 @@
     "purpose": { "label": "Zweck & Funktionsumfang" },
     "data": { "label": "Daten & Verarbeitung" },
     "personalDataUsed": { "label": "Personenbezogene Daten verwendet" },
-    "personalDataCategories": { "label": "Datenkategorien" },
+    "personalDataCategories": {
+      "label": "Datenkategorien",
+      "placeholder": "Kategorie1, Kategorie2"
+    },
     "retention": { "label": "Aufbewahrung" },
-    "model": { "label": "Modell & Architektur" },
-    "autonomy": { "label": "Autonomie & Berechtigungen" },
+    "interfaces": {
+      "source": "Schnittstelle 1 Quelle",
+      "target": "Schnittstelle 1 Ziel",
+      "viaMiddleware": "über Middleware"
+    },
+    "model": {
+      "label": "Modell & Architektur",
+      "type": { "placeholder": "Typ" },
+      "version": { "placeholder": "Version" },
+      "provider": { "placeholder": "Anbieter" },
+      "deployment": {
+        "onprem": "On-Premise",
+        "saas": "SaaS",
+        "cloud": "Cloud"
+      },
+      "region": { "placeholder": "Region" },
+      "adaptation": {
+        "prompting": "Prompting",
+        "finetune": "Feintuning",
+        "rag": "RAG",
+        "other": "Sonstiges"
+      }
+    },
+    "autonomy": {
+      "label": "Autonomie & Berechtigungen",
+      "options": {
+        "advice": "Unterstützend",
+        "partial": "Teilweise",
+        "autonomous": "Autonom"
+      }
+    },
     "hitlRequired": { "label": "Human-in-the-Loop erforderlich" },
+    "hitl": { "thresholds": { "placeholder": "Schwellenwerte" } },
+    "permissionDimensions": { "placeholder": "Berechtigungsdimensionen" },
     "transparency": { "label": "Transparenz" },
-    "transparencyNotice": { "label": "KI-Hinweis im UI angezeigt" },
-    "risk": { "label": "Risiko" },
-    "kbv": { "label": "KBV-Checkliste" },
-    "dea": { "label": "Datenschutz-Folgenabschätzung" },
+    "transparencyNotice": {
+      "label": "KI-Hinweis im UI angezeigt",
+      "artifactLink": { "placeholder": "Link" }
+    },
+    "risk": {
+      "label": "Risiko",
+      "eu_ai_act": {
+        "minimal": "Minimal",
+        "limited": "Begrenzt",
+        "high": "Hoch",
+        "prohibited": "Verboten"
+      },
+      "corp_class": {
+        "low": "Niedrig",
+        "medium": "Mittel",
+        "high": "Hoch"
+      },
+      "justification": { "placeholder": "Begründung" }
+    },
+    "kbv": {
+      "label": "KBV-Checkliste",
+      "no_perf_control": "Keine Leistungskontrolle",
+      "no_exports": "Keine Exporte",
+      "need_to_know": "Need-to-know-Prinzip",
+      "test_data_anonymized": "Testdaten anonymisiert",
+      "public_data_no_perf_insights": "Öffentliche Daten ohne Leistungsbezug"
+    },
+    "dea": {
+      "label": "Datenschutz-Folgenabschätzung",
+      "date": { "placeholder": "Datum" },
+      "link": { "placeholder": "Link" }
+    },
     "deaUploaded": { "label": "DSFA hochgeladen" },
     "foreign": { "label": "Externe Verarbeitung" },
-    "foreignPresent": { "label": "Ausländische/externe Verarbeitung vorhanden" }
+    "foreignPresent": { "label": "Ausländische/externe Verarbeitung vorhanden" },
+    "submit": "Absenden"
   }
 }
+
