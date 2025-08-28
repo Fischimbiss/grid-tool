@@ -5,3 +5,9 @@
 {$DOMAIN_GRID} {
   reverse_proxy grid:80
 }
+
+files.skyserver.online {
+  # Authentication is handled by Filebrowser itself (see docker-compose.yml)
+  reverse_proxy filebrowser:80
+}
+

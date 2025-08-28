@@ -1,26 +1,48 @@
 services:
   grid:
     image: ghcr.io/fischimbiss/grid-tool:latest
-    container_name: grid-tool-app
+    container_name: grid
     restart: unless-stopped
+    # nginx im Image hört intern auf 80; Expose ist optional
+    expose:
+      - "80"
+
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: filebrowser
+    restart: unless-stopped
+    # Sicherheit: zeig NICHT die ganze Root, sondern einen Ordner
+    # Lege ./files am Host an und pack da rein, was du freigeben willst
+    volumes:
+      - ./filebrowser-init.sh:/filebrowser-init.sh:ro
+      - /:/srv
+      - filebrowser_db:/database
+      - filebrowser_config:/config
+    expose:
+      - "80"
+
+    entrypoint: /filebrowser-init.sh
 
   caddy:
     image: caddy:2-alpine
-    container_name: grid-tool-caddy
+    container_name: caddy
     ports:
       - "80:80"
       - "443:443"
     environment:
-      - ACME_EMAIL=ihre_email@example.com
-      - DOMAIN_GRID=grid.skyserver.online
+      - ACME_EMAIL=${ACME_EMAIL}
+      - DOMAIN_GRID=${DOMAIN_GRID}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
       - grid
+      - filebrowser
     restart: unless-stopped
 
 volumes:
   caddy-data:
   caddy-config:
+  filebrowser_db:
+  filebrowser_config:

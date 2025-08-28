@@ -94,6 +94,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
         <>
           <section>
             <h2>B: {t("aiTab.purpose.label")}</h2>
+
             <Textarea maxLength={600} {...form.register('purpose')} />
           </section>
 

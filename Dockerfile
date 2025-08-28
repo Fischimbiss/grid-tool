@@ -6,7 +6,7 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
-RUN npx prisma generate      # Prisma Client erzeugen
+# RUN npx prisma generate      # Prisma Client erzeugen
 RUN npm run build
 
 # Serve-Phase
