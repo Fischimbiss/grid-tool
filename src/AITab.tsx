@@ -212,14 +212,26 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
               <Checkbox {...form.register('transparency_notice.required')} /> {t("aiTab.transparencyNotice.label")}
             </label>
             <label>{t("aiTab.transparencyNotice.noticeText.label")}</label>
-            <Input
-              placeholder={t("aiTab.transparencyNotice.noticeText.placeholder")}
-              {...form.register('transparency_notice.notice_text')}
+            <Controller
+              name="transparency_notice.notice_text"
+              control={form.control}
+              render={({ field }) => (
+                <RichTextarea
+                  placeholder={t("aiTab.transparencyNotice.noticeText.placeholder")}
+                  {...field}
+                />
+              )}
             />
             <label>{t("aiTab.transparencyNotice.otherMarking.label")}</label>
-            <Input
-              placeholder={t("aiTab.transparencyNotice.otherMarking.placeholder")}
-              {...form.register('transparency_notice.other_marking')}
+            <Controller
+              name="transparency_notice.other_marking"
+              control={form.control}
+              render={({ field }) => (
+                <RichTextarea
+                  placeholder={t("aiTab.transparencyNotice.otherMarking.placeholder")}
+                  {...field}
+                />
+              )}
             />
           </Card>
 
@@ -240,9 +252,15 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
               <option value="high">{t("aiTab.risk.corp_class.high")}</option>
             </Select>
             <label>{t("aiTab.risk.justification.label")}</label>
-            <Input
-              placeholder={t("aiTab.risk.justification.placeholder")}
-              {...form.register('risk.justification')}
+            <Controller
+              name="risk.justification"
+              control={form.control}
+              render={({ field }) => (
+                <RichTextarea
+                  placeholder={t("aiTab.risk.justification.placeholder")}
+                  {...field}
+                />
+              )}
             />
           </Card>
 
