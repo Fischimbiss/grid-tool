@@ -7,6 +7,8 @@ import { Checkbox } from './components/ui/checkbox';
 import { Textarea } from './components/ui/textarea';
 import { Button } from './components/ui/button';
 import { t } from "./i18n";
+import { Select } from './components/ui/select';
+import { Card } from './components/ui/card';
 
 interface Props {
   lastSnapshot?: Partial<AiFormData>;
@@ -70,29 +72,29 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      <section>
+      <Card className="space-y-2">
         <h2>A: {t("aiTab.aiPresent.label")}</h2>
         <p>{t("aiTab.aiPresent.description")}</p>
         <label className="flex items-center gap-2">
           <Checkbox {...form.register('ai_present')} /> {t("aiTab.aiPresent.checkbox")}
         </label>
-      </section>
+      </Card>
       {!aiPresent && (
-        <div>
+        <Card className="space-y-2">
           <label>{t("aiTab.processImpact.label")}</label>
           <Textarea maxLength={600} {...form.register('process_impact')} />
-        </div>
+        </Card>
       )}
       {aiPresent && (
         <>
-          <section>
+          <Card className="space-y-2">
             <h2>B: {t("aiTab.purpose.label")}</h2>
             <p>{t("aiTab.purpose.description")}</p>
 
             <Textarea maxLength={600} {...form.register('purpose')} />
-          </section>
+          </Card>
 
-          <section>
+          <Card className="space-y-2">
             <h2>C: {t("aiTab.data.label")}</h2>
             <p>{t("aiTab.data.description")}</p>
             <label className="flex items-center gap-2">
@@ -118,9 +120,9 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
                 </div>
               </div>
             )}
-          </section>
+          </Card>
 
-          <section>
+          <Card className="space-y-2">
             <h2>D: {t("aiTab.model.label")}</h2>
             <p>{t("aiTab.model.description")}</p>
             <label>{t("aiTab.model.type.label")}</label>
@@ -139,29 +141,29 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
               {...form.register('model.provider')}
             />
             <label>{t("aiTab.model.deployment.label")}</label>
-            <select {...form.register('model.deployment')}>
+            <Select {...form.register('model.deployment')}>
               <option value="onprem">{t("aiTab.model.deployment.onprem")}</option>
               <option value="saas">{t("aiTab.model.deployment.saas")}</option>
               <option value="cloud">{t("aiTab.model.deployment.cloud")}</option>
-            </select>
+            </Select>
             <label>{t("aiTab.model.region.label")}</label>
             <Input
               placeholder={t("aiTab.model.region.placeholder")}
               {...form.register('model.region')}
             />
             <label>{t("aiTab.model.adaptation.label")}</label>
-            <select {...form.register('model.adaptation')}>
+            <Select {...form.register('model.adaptation')}>
               <option value="prompting">{t("aiTab.model.adaptation.prompting")}</option>
               <option value="finetune">{t("aiTab.model.adaptation.finetune")}</option>
               <option value="rag">{t("aiTab.model.adaptation.rag")}</option>
               <option value="other">{t("aiTab.model.adaptation.other")}</option>
-            </select>
-          </section>
+            </Select>
+          </Card>
 
-          <section>
+          <Card className="space-y-2">
             <h2>E: {t("aiTab.autonomy.label")}</h2>
             <p>{t("aiTab.autonomy.description")}</p>
-            <div>
+            <div className="space-y-1">
               <label className="flex items-center gap-1">
                 <input type="radio" value="advice" {...form.register('autonomy')} /> {t("aiTab.autonomy.options.advice")}
               </label>
@@ -175,19 +177,23 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
             <label className="flex items-center gap-2">
               <Checkbox {...form.register('hitl.required')} /> {t("aiTab.hitlRequired.label")}
             </label>
-            <label>{t("aiTab.hitl.thresholds.label")}</label>
-            <Input
-              placeholder={t("aiTab.hitl.thresholds.placeholder")}
-              {...form.register('hitl.thresholds')}
-            />
-            <label>{t("aiTab.permissionDimensions.label")}</label>
-            <Input
-              placeholder={t("aiTab.permissionDimensions.placeholder")}
-              {...form.register('permission_dimensions')}
-            />
-          </section>
+            <div className="space-y-2 pl-4">
+              <label>{t("aiTab.hitl.thresholds.label")}</label>
+              <Input
+                placeholder={t("aiTab.hitl.thresholds.placeholder")}
+                {...form.register('hitl.thresholds')}
+              />
+              <p className="text-sm text-neutral-600">{t("aiTab.hitl.thresholds.help")}</p>
+              <label>{t("aiTab.permissionDimensions.label")}</label>
+              <Input
+                placeholder={t("aiTab.permissionDimensions.placeholder")}
+                {...form.register('permission_dimensions')}
+              />
+              <p className="text-sm text-neutral-600">{t("aiTab.permissionDimensions.help")}</p>
+            </div>
+          </Card>
 
-          <section>
+          <Card className="space-y-2">
             <h2>F: {t("aiTab.transparency.label")}</h2>
             <p>{t("aiTab.transparency.description")}</p>
             <label className="flex items-center gap-2">
@@ -198,32 +204,32 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
               placeholder={t("aiTab.transparencyNotice.artifactLink.placeholder")}
               {...form.register('transparency_notice.artifact_link')}
             />
-          </section>
+          </Card>
 
-          <section>
+          <Card className="space-y-2">
             <h2>G: {t("aiTab.risk.label")}</h2>
             <p>{t("aiTab.risk.description")}</p>
             <label>{t("aiTab.risk.eu_ai_act.label")}</label>
-            <select {...form.register('risk.eu_ai_act')}>
+            <Select {...form.register('risk.eu_ai_act')}>
               <option value="minimal">{t("aiTab.risk.eu_ai_act.minimal")}</option>
               <option value="limited">{t("aiTab.risk.eu_ai_act.limited")}</option>
               <option value="high">{t("aiTab.risk.eu_ai_act.high")}</option>
               <option value="prohibited">{t("aiTab.risk.eu_ai_act.prohibited")}</option>
-            </select>
+            </Select>
             <label>{t("aiTab.risk.corp_class.label")}</label>
-            <select {...form.register('risk.corp_class')}>
+            <Select {...form.register('risk.corp_class')}>
               <option value="low">{t("aiTab.risk.corp_class.low")}</option>
               <option value="medium">{t("aiTab.risk.corp_class.medium")}</option>
               <option value="high">{t("aiTab.risk.corp_class.high")}</option>
-            </select>
+            </Select>
             <label>{t("aiTab.risk.justification.label")}</label>
             <Input
               placeholder={t("aiTab.risk.justification.placeholder")}
               {...form.register('risk.justification')}
             />
-          </section>
+          </Card>
 
-          <section>
+          <Card className="space-y-2">
             <h2>H: {t("aiTab.dea.label")}</h2>
             <p>{t("aiTab.dea.description")}</p>
             <label className="flex items-center gap-2">
@@ -236,7 +242,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
             />
             <label>{t("aiTab.dea.file.label")}</label>
             <Input type="file" {...form.register('dea.file')} />
-          </section>
+          </Card>
 
           <aside className="p-2 border">
             {corpClass === 'low' && <p>KBV-Standards anwenden</p>}
