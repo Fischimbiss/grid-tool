@@ -34,7 +34,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
       autonomy: 'advice',
       hitl: { required: false, thresholds: '' },
       permission_dimensions: '',
-      transparency_notice: { required: false, artifact_link: '' },
+      transparency_notice: { required: false, notice_text: '', other_marking: '' },
       risk: { eu_ai_act: 'minimal', corp_class: 'low', justification: '' },
       dea: { completed: false, date: '', file: undefined },
       monitoring: { metrics: [], eval_cadence: '' },
@@ -43,7 +43,6 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
 
   const aiPresent = form.watch('ai_present');
   const corpClass = form.watch('risk.corp_class');
-  const employeeInteraction = form.watch('employee_interaction');
   const personalData = form.watch('personal_data_used');
 
   const onSubmit = (data: AiFormData) => {
@@ -197,12 +196,17 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
             <h2>F: {t("aiTab.transparency.label")}</h2>
             <p>{t("aiTab.transparency.description")}</p>
             <label className="flex items-center gap-2">
-              <Checkbox {...form.register('transparency_notice.required')} disabled={!employeeInteraction} /> {t("aiTab.transparencyNotice.label")}
+              <Checkbox {...form.register('transparency_notice.required')} /> {t("aiTab.transparencyNotice.label")}
             </label>
-            <label>{t("aiTab.transparencyNotice.artifactLink.label")}</label>
+            <label>{t("aiTab.transparencyNotice.noticeText.label")}</label>
             <Input
-              placeholder={t("aiTab.transparencyNotice.artifactLink.placeholder")}
-              {...form.register('transparency_notice.artifact_link')}
+              placeholder={t("aiTab.transparencyNotice.noticeText.placeholder")}
+              {...form.register('transparency_notice.notice_text')}
+            />
+            <label>{t("aiTab.transparencyNotice.otherMarking.label")}</label>
+            <Input
+              placeholder={t("aiTab.transparencyNotice.otherMarking.placeholder")}
+              {...form.register('transparency_notice.other_marking')}
             />
           </Card>
 

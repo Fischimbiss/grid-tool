@@ -76,7 +76,8 @@
     },
     "transparencyNotice": {
       "label": "KI-Hinweis im UI angezeigt",
-      "artifactLink": { "label": "Link zum Hinweis (falls vorhanden)", "placeholder": "Link" }
+      "noticeText": { "label": "Hinweistext (falls bereits vorhanden)", "placeholder": "Hinweistext" },
+      "otherMarking": { "label": "Sonstige Kennzeichnung", "placeholder": "Sonstige Kennzeichnung" }
     },
     "risk": {
       "label": "Risiko",

@@ -13,7 +13,7 @@ export const lowRisk: AiFormData = {
   autonomy: 'advice',
   hitl: { required: false, thresholds: '' },
   permission_dimensions: '',
-  transparency_notice: { required: false, artifact_link: '' },
+  transparency_notice: { required: false, notice_text: '', other_marking: '' },
   risk: { eu_ai_act: 'minimal', corp_class: 'low', justification: 'minimal risk' },
   dea: { uploaded: true, date: '2024-01-01', link: '' },
   monitoring: { metrics: ['accuracy'], eval_cadence: '' },

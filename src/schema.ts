@@ -34,7 +34,8 @@ export const aiSchema = z.object({
   permission_dimensions: z.string().optional(),
   transparency_notice: z.object({
     required: z.boolean(),
-    artifact_link: z.string().url().optional(),
+    notice_text: z.string().optional(),
+    other_marking: z.string().optional(),
   }),
   risk: z.object({
     eu_ai_act: z.enum(['minimal', 'limited', 'high', 'prohibited']),
@@ -55,8 +56,8 @@ export const aiSchema = z.object({
     if (!data.transparency_notice.required) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['transparency_notice', 'required'], message: 'required' });
     }
-    if (!data.transparency_notice.artifact_link) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['transparency_notice', 'artifact_link'], message: 'link required' });
+    if (!data.transparency_notice.notice_text) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['transparency_notice', 'notice_text'], message: 'text required' });
     }
   }
 
