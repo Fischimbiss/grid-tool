@@ -245,6 +245,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
           </Card>
 
           <aside className="p-2 border">
+            <h3 className="font-semibold">Maßnahmenempfehlung</h3>
             {corpClass === 'low' && <p>KBV-Standards anwenden</p>}
             {corpClass === 'medium' && <p>KBV-Standards anwenden – Transparenzpflicht ggü. Beschäftigten</p>}
             {corpClass === 'high' && (
