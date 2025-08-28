@@ -72,10 +72,10 @@
     },
     "transparency": {
       "label": "Transparenz",
-      "description": "Wie wird Transparenz gegenüber Nutzer*innen sichergestellt?"
+      "description": "Wie wird die Transparenz bzgl. der Nutzung von KI gegenüber Nutzer*innen sichergestellt?"
     },
     "transparencyNotice": {
-      "label": "KI-Hinweis im UI angezeigt",
+      "label": "KI-Hinweis wird im UI angezeigt",
       "noticeText": { "label": "Hinweistext (falls bereits vorhanden)", "placeholder": "Hinweistext" },
       "otherMarking": { "label": "Sonstige Kennzeichnung", "placeholder": "Sonstige Kennzeichnung" }
     },
