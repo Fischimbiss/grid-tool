@@ -17,29 +17,29 @@
     "personalDataUsed": { "label": "Beschäftigtendaten werden verarbeitet" },
     "personalDataCategories": {
       "label": "Datenkategorien",
-      "placeholder": "Kategorie1, Kategorie2"
+      "placeholder": "z.B. nur Logindaten, Name, E-Mail, etc."
     },
-    "retention": { "label": "Aufbewahrung" },
+    "retention": { "label": "Aufbewahrungsdauer/Speicherfrist" },
     "interfaces": {
-      "source": "Schnittstelle 1 Quelle",
-      "target": "Schnittstelle 1 Ziel",
+      "source": "Schnittstelle Quelle",
+      "target": "Schnittstelle Ziel",
       "viaMiddleware": "über Middleware"
     },
     "model": {
       "label": "Modell & Architektur",
       "description": "Nennen Sie Details zum KI-Modell und seiner Bereitstellung.",
-      "type": { "label": "Modelltyp", "placeholder": "Typ" },
-      "version": { "label": "Version", "placeholder": "Version" },
-      "provider": { "label": "Anbieter", "placeholder": "Anbieter" },
+      "type": { "label": "Modelltyp", "placeholder": "Typ (z.B. LLM, Diffusion, etc.)" },
+      "version": { "label": "Version", "placeholder": "Version (z.B. GPT-4o, Gemini 2.5 Pro, Claude 3.7, etc.)" },
+      "provider": { "label": "Anbieter", "placeholder": "Anbieter (z.B. openAI, Google, Microsoft, etc.)" },
       "deployment": {
         "label": "Bereitstellung",
         "onprem": "On-Premise",
         "saas": "SaaS",
         "cloud": "Cloud"
       },
-      "region": { "label": "Region", "placeholder": "Region" },
+      "region": { "label": "Region", "placeholder": "Region der Bereitstellung (z.B. DE, EU, USA, etc.)" },
       "adaptation": {
-        "label": "Anpassung",
+        "label": "Anpassungsmöglichkeit",
         "prompting": "Prompting",
         "finetune": "Feintuning",
         "rag": "RAG",
@@ -76,7 +76,7 @@
     },
     "transparencyNotice": {
       "label": "KI-Hinweis im UI angezeigt",
-      "artifactLink": { "label": "Link zum Hinweis", "placeholder": "Link" }
+      "artifactLink": { "label": "Link zum Hinweis (falls vorhanden)", "placeholder": "Link" }
     },
     "risk": {
       "label": "Risiko",
@@ -89,7 +89,7 @@
         "prohibited": "Verboten"
       },
       "corp_class": {
-        "label": "Konzernklassifizierung",
+        "label": "Konzernklassifizierung (Betriebliche Risikoklassifierierung)",
         "low": "Niedrig",
         "medium": "Mittel",
         "high": "Hoch"
