@@ -39,6 +39,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import cn from 'classnames'
+import AITab from './AITab'
 
 
 // Navigationseinträge
@@ -944,6 +945,8 @@ export default function ToolReviewMockup() {
                       )}
                     </div>
                   </div>
+                ) : activeKey === "ai" ? (
+                  <AITab />
                 ) : (
                   <div className="rounded-md border p-4 text-sm text-gray-600 bg-white">
                     Inhalt für <span className="font-medium">{activeItem.label}</span>

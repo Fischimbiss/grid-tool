@@ -1,0 +1,97 @@
+{
+  "aiTab": {
+    "aiPresent": { "label": "KI vorhanden" },
+    "processImpact": { "label": "Begründung" },
+    "purpose": { "label": "Zweck & Funktionsumfang" },
+    "data": { "label": "Daten & Verarbeitung" },
+    "personalDataUsed": { "label": "Personenbezogene Daten verwendet" },
+    "personalDataCategories": { "label": "Datenkategorien", "placeholder": "Kategorie1, Kategorie2" },
+    "retention": { "label": "Aufbewahrung" },
+    "model": {
+      "label": "Modell & Architektur",
+      "type": { "label": "Typ" },
+      "version": { "label": "Version" },
+      "provider": { "label": "Anbieter" },
+      "deployment": {
+        "label": "Bereitstellung",
+        "options": {
+          "onprem": "On-Premises",
+          "saas": "SaaS",
+          "cloud": "Cloud"
+        }
+      },
+      "region": { "label": "Region" },
+      "adaptation": {
+        "label": "Anpassung",
+        "options": {
+          "prompting": "Prompting",
+          "finetune": "Feintuning",
+          "rag": "RAG",
+          "other": "Andere"
+        }
+      }
+    },
+    "autonomy": {
+      "label": "Autonomie & Berechtigungen",
+      "options": {
+        "advice": "Beratung",
+        "partial": "Teilautomatisiert",
+        "autonomous": "Vollautomatisiert"
+      }
+    },
+    "hitlRequired": { "label": "Human-in-the-Loop erforderlich" },
+    "hitlThresholds": { "label": "Schwellenwerte" },
+    "permissionDimensions": { "label": "Berechtigungsdimensionen" },
+    "transparency": { "label": "Transparenz" },
+    "transparencyNotice": {
+      "label": "KI-Hinweis im UI angezeigt",
+      "link": { "label": "Link zum Info-Dokument" }
+    },
+    "risk": {
+      "label": "Risiko",
+      "euAiAct": {
+        "label": "EU AI Act Einstufung",
+        "options": {
+          "minimal": "Minimal",
+          "limited": "Begrenzt",
+          "high": "Hoch",
+          "prohibited": "Verboten"
+        }
+      },
+      "corpClass": {
+        "label": "Konzernklassifikation",
+        "options": {
+          "low": "Niedrig",
+          "medium": "Mittel",
+          "high": "Hoch"
+        }
+      },
+      "justification": { "label": "Begründung" }
+    },
+    "kbv": {
+      "label": "KBV-Checkliste",
+      "no_perf_control": { "label": "Keine Leistungs-/Verhaltenskontrolle" },
+      "no_exports": { "label": "Keine Exporte" },
+      "need_to_know": { "label": "Need-to-know-Prinzip" },
+      "test_data_anonymized": { "label": "Testdaten anonymisiert" },
+      "public_data_no_perf_insights": { "label": "Öffentliche Daten ohne Leistungsrückschlüsse" }
+    },
+    "dea": {
+      "label": "Datenschutz-Folgenabschätzung",
+      "uploaded": { "label": "DSFA hochgeladen" },
+      "date": { "label": "Datum" },
+      "link": { "label": "Link" }
+    },
+    "foreign": {
+      "label": "Externe Verarbeitung",
+      "present": { "label": "Ausländische/externe Verarbeitung vorhanden" },
+      "notes": { "label": "Notizen" }
+    },
+    "interface": {
+      "source": { "label": "Schnittstelle Quelle" },
+      "target": { "label": "Schnittstelle Ziel" },
+      "viaMiddleware": { "label": "über Middleware" }
+    },
+    "submit": { "label": "Absenden" }
+  }
+}
