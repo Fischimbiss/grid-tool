@@ -61,12 +61,14 @@
     "hitl": {
       "thresholds": {
         "label": "Schwellenwerte",
-        "placeholder": "Schwellenwerte"
+        "placeholder": "Schwellenwerte",
+        "help": "Definiert, ab wann Entscheidungen automatisiert oder durch Menschen geprüft werden."
       }
     },
     "permissionDimensions": {
       "label": "Berechtigungsdimensionen",
-      "placeholder": "Berechtigungsdimensionen"
+      "placeholder": "Berechtigungsdimensionen",
+      "help": "Beschreibt, auf welchen Ebenen die KI Berechtigungen erhält (z.\u202F.B. Datenzugriff, Funktionen)."
     },
     "transparency": {
       "label": "Transparenz",
