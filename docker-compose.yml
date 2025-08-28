@@ -20,6 +20,7 @@ services:
       - filebrowser_config:/config
     expose:
       - "80"
+
     entrypoint: /filebrowser-init.sh
 
   caddy:
