@@ -249,11 +249,11 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
             {corpClass === 'medium' && <p>KBV-Standards anwenden – Transparenzpflicht ggü. Beschäftigten</p>}
             {corpClass === 'high' && (
               <ul>
-                <li>KI-Expert:innenkreis</li>
-                <li>Fairnessmetriken</li>
-                <li>QA-Plan</li>
+                <li>KI-Expert:innenkreis beteiligen</li>
+                <li>Fairnessmetriken beschreiben</li>
+                <li>QA-Plan erstellen / vorlegen</li>
                 <li>Regelmäßige Evaluation</li>
-                <li>Human-in-the-Loop</li>
+                <li>Menschliche Beteiligung sicherstellen (Human-in-the-Loop)</li>
               </ul>
             )}
           </aside>
