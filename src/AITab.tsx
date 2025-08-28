@@ -106,16 +106,19 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
             {personalData && (
               <div className="space-y-2 pl-4">
                 <label>{t("aiTab.personalDataCategories.label")}</label>
-                <Input {...form.register('personal_data_categories')} placeholder="cat1, cat2" />
+                <Input
+                  {...form.register('personal_data_categories')}
+                  placeholder={t("aiTab.personalDataCategories.placeholder")}
+                />
                 <label>{t("aiTab.retention.label")}</label>
                 <Input {...form.register('retention')} />
                 <div>
-                  <label>Interface 1 source</label>
+                  <label>{t("aiTab.interfaces.source")}</label>
                   <Input {...form.register('interfaces.0.source')} />
-                  <label>Interface 1 target</label>
+                  <label>{t("aiTab.interfaces.target")}</label>
                   <Input {...form.register('interfaces.0.target')} />
                   <label className="flex items-center gap-2">
-                    <Checkbox {...form.register('interfaces.0.via_middleware')} /> via middleware
+                    <Checkbox {...form.register('interfaces.0.via_middleware')} /> {t("aiTab.interfaces.viaMiddleware")}
                   </label>
                 </div>
               </div>
@@ -124,20 +127,32 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
 
           <section>
             <h2>D: {t("aiTab.model.label")}</h2>
-            <Input placeholder="Type" {...form.register('model.type')} />
-            <Input placeholder="Version" {...form.register('model.version')} />
-            <Input placeholder="Provider" {...form.register('model.provider')} />
+            <Input
+              placeholder={t("aiTab.model.type.placeholder")}
+              {...form.register('model.type')}
+            />
+            <Input
+              placeholder={t("aiTab.model.version.placeholder")}
+              {...form.register('model.version')}
+            />
+            <Input
+              placeholder={t("aiTab.model.provider.placeholder")}
+              {...form.register('model.provider')}
+            />
             <select {...form.register('model.deployment')}>
-              <option value="onprem">onprem</option>
-              <option value="saas">saas</option>
-              <option value="cloud">cloud</option>
+              <option value="onprem">{t("aiTab.model.deployment.onprem")}</option>
+              <option value="saas">{t("aiTab.model.deployment.saas")}</option>
+              <option value="cloud">{t("aiTab.model.deployment.cloud")}</option>
             </select>
-            <Input placeholder="Region" {...form.register('model.region')} />
+            <Input
+              placeholder={t("aiTab.model.region.placeholder")}
+              {...form.register('model.region')}
+            />
             <select {...form.register('model.adaptation')}>
-              <option value="prompting">prompting</option>
-              <option value="finetune">finetune</option>
-              <option value="rag">rag</option>
-              <option value="other">other</option>
+              <option value="prompting">{t("aiTab.model.adaptation.prompting")}</option>
+              <option value="finetune">{t("aiTab.model.adaptation.finetune")}</option>
+              <option value="rag">{t("aiTab.model.adaptation.rag")}</option>
+              <option value="other">{t("aiTab.model.adaptation.other")}</option>
             </select>
           </section>
 
@@ -145,20 +160,26 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
             <h2>E: {t("aiTab.autonomy.label")}</h2>
             <div>
               <label className="flex items-center gap-1">
-                <input type="radio" value="advice" {...form.register('autonomy')} /> advice
+                <input type="radio" value="advice" {...form.register('autonomy')} /> {t("aiTab.autonomy.options.advice")}
               </label>
               <label className="flex items-center gap-1">
-                <input type="radio" value="partial" {...form.register('autonomy')} /> partial
+                <input type="radio" value="partial" {...form.register('autonomy')} /> {t("aiTab.autonomy.options.partial")}
               </label>
               <label className="flex items-center gap-1">
-                <input type="radio" value="autonomous" {...form.register('autonomy')} /> autonomous
+                <input type="radio" value="autonomous" {...form.register('autonomy')} /> {t("aiTab.autonomy.options.autonomous")}
               </label>
             </div>
             <label className="flex items-center gap-2">
               <Checkbox {...form.register('hitl.required')} /> {t("aiTab.hitlRequired.label")}
             </label>
-            <Input placeholder="Thresholds" {...form.register('hitl.thresholds')} />
-            <Input placeholder="Permission dimensions" {...form.register('permission_dimensions')} />
+            <Input
+              placeholder={t("aiTab.hitl.thresholds.placeholder")}
+              {...form.register('hitl.thresholds')}
+            />
+            <Input
+              placeholder={t("aiTab.permissionDimensions.placeholder")}
+              {...form.register('permission_dimensions')}
+            />
           </section>
 
           <section>
@@ -166,30 +187,36 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
             <label className="flex items-center gap-2">
               <Checkbox {...form.register('transparency_notice.required')} disabled={!employeeInteraction} /> {t("aiTab.transparencyNotice.label")}
             </label>
-            <Input placeholder="Link" {...form.register('transparency_notice.artifact_link')} />
+            <Input
+              placeholder={t("aiTab.transparencyNotice.artifactLink.placeholder")}
+              {...form.register('transparency_notice.artifact_link')}
+            />
           </section>
 
           <section>
             <h2>G: {t("aiTab.risk.label")}</h2>
             <select {...form.register('risk.eu_ai_act')}>
-              <option value="minimal">minimal</option>
-              <option value="limited">limited</option>
-              <option value="high">high</option>
-              <option value="prohibited">prohibited</option>
+              <option value="minimal">{t("aiTab.risk.eu_ai_act.minimal")}</option>
+              <option value="limited">{t("aiTab.risk.eu_ai_act.limited")}</option>
+              <option value="high">{t("aiTab.risk.eu_ai_act.high")}</option>
+              <option value="prohibited">{t("aiTab.risk.eu_ai_act.prohibited")}</option>
             </select>
             <select {...form.register('risk.corp_class')}>
-              <option value="low">low</option>
-              <option value="medium">medium</option>
-              <option value="high">high</option>
+              <option value="low">{t("aiTab.risk.corp_class.low")}</option>
+              <option value="medium">{t("aiTab.risk.corp_class.medium")}</option>
+              <option value="high">{t("aiTab.risk.corp_class.high")}</option>
             </select>
-            <Input placeholder="Justification" {...form.register('risk.justification')} />
+            <Input
+              placeholder={t("aiTab.risk.justification.placeholder")}
+              {...form.register('risk.justification')}
+            />
           </section>
 
           <section>
             <h2>H: {t("aiTab.kbv.label")}</h2>
             {(['no_perf_control','no_exports','need_to_know','test_data_anonymized','public_data_no_perf_insights'] as const).map(k => (
               <label key={k} className="flex items-center gap-2">
-                <Checkbox {...form.register(`kbv_checks.${k}` as const)} /> {k}
+                <Checkbox {...form.register(`kbv_checks.${k}` as const)} /> {t(`aiTab.kbv.${k}`)}
               </label>
             ))}
           </section>
@@ -199,8 +226,14 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
             <label className="flex items-center gap-2">
               <Checkbox {...form.register('dea.uploaded')} /> {t("aiTab.deaUploaded.label")}
             </label>
-            <Input placeholder="Date" {...form.register('dea.date')} />
-            <Input placeholder="Link" {...form.register('dea.link')} />
+            <Input
+              placeholder={t("aiTab.dea.date.placeholder")}
+              {...form.register('dea.date')}
+            />
+            <Input
+              placeholder={t("aiTab.dea.link.placeholder")}
+              {...form.register('dea.link')}
+            />
           </section>
 
           <section>
@@ -226,7 +259,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
           </aside>
         </>
       )}
-      <Button type="submit">Submit</Button>
+      <Button type="submit">{t("aiTab.submit")}</Button>
     </form>
   );
 };
