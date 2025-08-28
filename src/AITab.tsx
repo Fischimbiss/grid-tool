@@ -1,10 +1,11 @@
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { aiSchema, AiFormData } from './schema';
 import { Input } from './components/ui/input';
 import { Checkbox } from './components/ui/checkbox';
 import { Textarea } from './components/ui/textarea';
+import { RichTextarea } from './components/ui/rich-textarea';
 import { Button } from './components/ui/button';
 import { t } from "./i18n";
 import { Select } from './components/ui/select';
@@ -178,15 +179,27 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
             </label>
             <div className="space-y-2 pl-4">
               <label>{t("aiTab.hitl.thresholds.label")}</label>
-              <Input
-                placeholder={t("aiTab.hitl.thresholds.placeholder")}
-                {...form.register('hitl.thresholds')}
+              <Controller
+                name="hitl.thresholds"
+                control={form.control}
+                render={({ field }) => (
+                  <RichTextarea
+                    placeholder={t("aiTab.hitl.thresholds.placeholder")}
+                    {...field}
+                  />
+                )}
               />
               <p className="text-sm text-neutral-600">{t("aiTab.hitl.thresholds.help")}</p>
               <label>{t("aiTab.permissionDimensions.label")}</label>
-              <Input
-                placeholder={t("aiTab.permissionDimensions.placeholder")}
-                {...form.register('permission_dimensions')}
+              <Controller
+                name="permission_dimensions"
+                control={form.control}
+                render={({ field }) => (
+                  <RichTextarea
+                    placeholder={t("aiTab.permissionDimensions.placeholder")}
+                    {...field}
+                  />
+                )}
               />
               <p className="text-sm text-neutral-600">{t("aiTab.permissionDimensions.help")}</p>
             </div>
