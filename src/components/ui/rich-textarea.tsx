@@ -18,6 +18,7 @@ export const RichTextarea = React.forwardRef<HTMLDivElement, Props>(
     }
 
     const exec = (cmd: string) => {
+      editorRef.current?.focus()
       document.execCommand(cmd)
       onChange?.(editorRef.current?.innerHTML || '')
     }
@@ -97,6 +98,7 @@ export const RichTextarea = React.forwardRef<HTMLDivElement, Props>(
             'min-h-[96px]',
             'whitespace-pre-wrap',
             'empty:before:content-[attr(data-placeholder)] before:text-neutral-400 before:pointer-events-none',
+            'rich-text',
             className || '',
           ].join(' ')}
           contentEditable
