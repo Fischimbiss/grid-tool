@@ -178,6 +178,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
                 render={({ field }) => (
                   <RichTextarea
                     placeholder={t("aiTab.hitl.thresholds.placeholder")}
+                    toolbar
                     {...field}
                   />
                 )}
@@ -190,6 +191,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
                 render={({ field }) => (
                   <RichTextarea
                     placeholder={t("aiTab.permissionDimensions.placeholder")}
+                    toolbar
                     {...field}
                   />
                 )}
@@ -210,6 +212,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
               render={({ field }) => (
                 <RichTextarea
                   placeholder={t("aiTab.transparencyNotice.noticeText.placeholder")}
+                  toolbar
                   {...field}
                 />
               )}
@@ -221,6 +224,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
               render={({ field }) => (
                 <RichTextarea
                   placeholder={t("aiTab.transparencyNotice.otherMarking.placeholder")}
+                  toolbar
                   {...field}
                 />
               )}
@@ -249,6 +253,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
               render={({ field }) => (
                 <RichTextarea
                   placeholder={t("aiTab.risk.justification.placeholder")}
+                  toolbar
                   {...field}
                 />
               )}
