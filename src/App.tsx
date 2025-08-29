@@ -238,7 +238,7 @@ function HighlightedText({ text }: { text: string }) {
 
 export default function ToolReviewMockup() {
   const hasRole = (_role: string) => true;
-  const currentStage = 2; // 0-based index of the current status
+  const [currentStage, setCurrentStage] = useState(2); // 0-based index of the current status
   // active Tab
   const [activeKey, setActiveKey] = useState(NAV_ITEMS[0].key);
 
@@ -533,16 +533,27 @@ export default function ToolReviewMockup() {
       {/* Fortschritt */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         {STAGES.map((stage, idx) => {
-          const statusIcon =
-            idx < currentStage ? <CheckCircle size={18} /> :
-            idx === currentStage ? <PlayCircle size={18} /> :
-            <Circle size={18} />;
-          const bgClass =
-            idx < currentStage ? "bg-pink-500 text-white" :
-            idx === currentStage ? "bg-blue-500 text-white" :
-            "bg-gray-300 text-gray-600";
+          const isApproved = currentStage === STAGES.length - 1;
+          const isDone = idx < currentStage || (isApproved && idx <= currentStage);
+          const isCurrent = idx === currentStage && !isApproved;
+          const statusIcon = isDone
+            ? <CheckCircle size={18} />
+            : isCurrent
+              ? <PlayCircle size={18} />
+              : <Circle size={18} />;
+          const bgClass = isDone
+            ? isApproved
+              ? "bg-green-500 text-white"
+              : "bg-pink-500 text-white"
+            : isCurrent
+              ? "bg-blue-500 text-white"
+              : "bg-gray-300 text-gray-600";
           return (
-            <div key={idx} className="flex-1 flex flex-col items-center">
+            <div
+              key={idx}
+              className="flex-1 flex flex-col items-center cursor-pointer"
+              onClick={() => setCurrentStage(idx)}
+            >
               <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${bgClass}`}>
                 {statusIcon}
               </div>
