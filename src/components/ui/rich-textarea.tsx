@@ -29,6 +29,15 @@ export const RichTextarea = React.forwardRef<HTMLDivElement, Props>(
       else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node
     }
 
+    React.useLayoutEffect(() => {
+      const el = editorRef.current
+      if (!el || document.activeElement !== el) return
+      const selection = window.getSelection()
+      if (!selection) return
+      selection.selectAllChildren(el)
+      selection.collapseToEnd()
+    }, [value])
+
     return (
       <div className="w-full">
         {toolbar && (
