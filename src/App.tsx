@@ -32,8 +32,14 @@ import {
   CheckCircle,
   Paperclip,
   Pencil,
+  User,
   PlayCircle,
-  Circle
+  Circle,
+  Wrench,
+  Users,
+  Handshake,
+  Accessibility,
+  Users2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -276,6 +282,26 @@ export default function ToolReviewMockup() {
   const [globalOnlyReminders, setGlobalOnlyReminders] = useState(false);
   const [globalVisibility, setGlobalVisibility] = useState<Visibility | "ALLE">("ALLE");
   const [globalSort, setGlobalSort] = useState<"neueste" | "älteste" | "bereich">("neueste");
+
+  // Bearbeiter Panel
+  const [showBearbeiter, setShowBearbeiter] = useState(false);
+  const [bearbeiter, setBearbeiter] = useState({
+    fSysV: 'Anna Fach',
+    tSysV: 'Thomas Technik',
+    aspHR: 'Hannah HR',
+    aspBR: 'Bruno Rat',
+    aspSBV: 'Sven SBV',
+    group: 'Systemgruppe A',
+  });
+  const [editingBearbeiter, setEditingBearbeiter] = useState<string | null>(null);
+  const BEARBEITER_FIELDS = [
+    { key: 'fSysV', label: 'F.SysV', title: 'fachseitige Systemverantwortung', Icon: User },
+    { key: 'tSysV', label: 'T.SysV', title: 'Technische Systemverantwortung', Icon: Wrench },
+    { key: 'aspHR', label: 'ASP HR', title: 'Ansprechpartner Human Ressources', Icon: Users },
+    { key: 'aspBR', label: 'ASP BR', title: 'Ansprechpartner Betriebsrat', Icon: Handshake },
+    { key: 'aspSBV', label: 'ASP SBV', title: 'Ansprechpartner Schwerbehinderten vertretung', Icon: Accessibility },
+    { key: 'group', label: 'Systemgruppe KBR', title: '', Icon: Users2 },
+  ] as const;
 
   // Demo: aktueller Nutzer & Gruppen (für Sichtbarkeiten)
   const currentUser = "Ich";
@@ -528,6 +554,12 @@ export default function ToolReviewMockup() {
           <h1 className="text-2xl font-bold">SYSTEM NAME</h1>
           <span className="text-gray-600 block mt-1">GRIP-ID: 1234-ABC-15</span>
         </div>
+        <Button
+          className="bg-pink-500 hover:bg-pink-600 text-white"
+          onClick={() => setShowBearbeiter(true)}
+        >
+          <User size={16} /> Bearbeiter
+        </Button>
       </div>
 
       {/* Fortschritt */}
@@ -1270,6 +1302,75 @@ export default function ToolReviewMockup() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bearbeiter Panel */}
+      {showBearbeiter && (
+        <div className="fixed inset-0 z-40 flex justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowBearbeiter(false)}></div>
+          <div className="relative bg-white w-96 h-full shadow-xl p-6 overflow-y-auto border-l border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Bearbeiter</h3>
+              <Button variant="neutral" size="sm" onClick={() => setShowBearbeiter(false)}>
+                <X size={16} className="mr-1" /> Schließen
+              </Button>
+            </div>
+            <div className="space-y-4">
+              {BEARBEITER_FIELDS.map(({ key, label, title, Icon }) => (
+                <div
+                  key={key}
+                  className="flex items-center gap-3 p-3 border rounded-md hover:bg-gray-50"
+                >
+                  <Icon size={18} className="text-gray-600" />
+                  <div className="flex-1" title={title}>
+                    <div className="text-sm font-medium">{label}</div>
+                    {editingBearbeiter === key ? (
+                      key === 'group' ? (
+                        <select
+                          className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                          value={bearbeiter[key as keyof typeof bearbeiter] as string}
+                          onChange={(e) =>
+                            setBearbeiter((prev) => ({ ...prev, [key]: e.target.value }))
+                          }
+                        >
+                          <option>Systemgruppe A</option>
+                          <option>Systemgruppe B</option>
+                          <option>Systemgruppe C</option>
+                        </select>
+                      ) : (
+                        <Input
+                          className="mt-1"
+                          value={bearbeiter[key as keyof typeof bearbeiter] as string}
+                          onChange={(e) =>
+                            setBearbeiter((prev) => ({ ...prev, [key]: e.target.value }))
+                          }
+                        />
+                      )
+                    ) : (
+                      <div className="mt-1 text-sm text-gray-700">
+                        {bearbeiter[key as keyof typeof bearbeiter]}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    {editingBearbeiter === key ? (
+                      <Button size="sm" variant="secondary" onClick={() => setEditingBearbeiter(null)}>
+                        Speichern
+                      </Button>
+                    ) : (
+                      <button
+                        className="p-1 text-gray-500 hover:text-gray-700"
+                        onClick={() => setEditingBearbeiter(key as string)}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
