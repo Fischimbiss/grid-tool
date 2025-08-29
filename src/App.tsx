@@ -31,7 +31,9 @@ import {
   ChevronDown,
   CheckCircle,
   Paperclip,
-  Pencil
+  Pencil,
+  PlayCircle,
+  Circle
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -51,6 +53,14 @@ const NAV_ITEMS = [
   { key: "reports", label: "Auswertungen / Reports", Icon: BarChart3 },
   { key: "privacy", label: "Datenschutz / Compliance", Icon: Lock },
   { key: "ai", label: "Künstliche Intelligenz", Icon: Bot }
+];
+
+const STAGES = [
+  "Erstellung",
+  "Vorprüfung",
+  "Vorstellung BR",
+  "Abstimmung BR",
+  "Freigabe"
 ];
 
 // -------------------- Rollen (Badges) --------------------
@@ -228,6 +238,7 @@ function HighlightedText({ text }: { text: string }) {
 
 export default function ToolReviewMockup() {
   const hasRole = (_role: string) => true;
+  const currentStage = 2; // 0-based index of the current status
   // active Tab
   const [activeKey, setActiveKey] = useState(NAV_ITEMS[0].key);
 
@@ -521,14 +532,24 @@ export default function ToolReviewMockup() {
 
       {/* Fortschritt */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        {["Stage 1", "Stage 2", "Stage 3", "Stage 4", "Stage 5"].map((stage, idx) => (
-          <div key={idx} className="flex-1 flex flex-col items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${idx < 3 ? "bg-pink-500 text-white" : "bg-gray-300"}`}>
-              {idx < 3 ? <CheckCircle size={18} /> : idx + 1}
+        {STAGES.map((stage, idx) => {
+          const statusIcon =
+            idx < currentStage ? <CheckCircle size={18} /> :
+            idx === currentStage ? <PlayCircle size={18} /> :
+            <Circle size={18} />;
+          const bgClass =
+            idx < currentStage ? "bg-pink-500 text-white" :
+            idx === currentStage ? "bg-blue-500 text-white" :
+            "bg-gray-300 text-gray-600";
+          return (
+            <div key={idx} className="flex-1 flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${bgClass}`}>
+                {statusIcon}
+              </div>
+              <span className="text-sm text-center">{stage}</span>
             </div>
-            <span className="text-sm text-center">{stage}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
