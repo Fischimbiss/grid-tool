@@ -1039,7 +1039,7 @@ export default function ToolReviewMockup() {
                     </div>
                   </fieldset>
                 ) : activeKey === "ai" ? (
-                  <AITab />
+                  <AITab canEdit={canEdit} />
                 ) : (
                   <div className="rounded-md border p-4 text-sm text-gray-600 bg-white">
                     Inhalt für <span className="font-medium">{activeItem.label}</span>

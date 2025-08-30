@@ -14,12 +14,13 @@ import CollapsibleCard from './components/ui/collapsible-card';
 interface Props {
   lastSnapshot?: Partial<AiFormData>;
   onCreateCR?: (tasks: string[]) => void;
+  canEdit?: boolean;
 }
 
 const corpRank = { low: 0, medium: 1, high: 2 } as const;
 const autoRank = { advice: 0, partial: 1, autonomous: 2 } as const;
 
-export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
+export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR, canEdit = true }) => {
   const form = useForm<AiFormData>({
     resolver: zodResolver(aiSchema),
     defaultValues: {
@@ -72,6 +73,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <fieldset disabled={!canEdit} className="space-y-4">
       <CollapsibleCard title={`A: ${t("aiTab.aiPresent.label")}`}>
         <p>{t("aiTab.aiPresent.description")}</p>
         <label className="flex items-center gap-2">
@@ -179,6 +181,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
                   <RichTextarea
                     placeholder={t("aiTab.hitl.thresholds.placeholder")}
                     toolbar
+                    disabled={!canEdit}
                     {...field}
                   />
                 )}
@@ -192,6 +195,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
                   <RichTextarea
                     placeholder={t("aiTab.permissionDimensions.placeholder")}
                     toolbar
+                    disabled={!canEdit}
                     {...field}
                   />
                 )}
@@ -213,6 +217,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
                 <RichTextarea
                   placeholder={t("aiTab.transparencyNotice.noticeText.placeholder")}
                   toolbar
+                  disabled={!canEdit}
                   {...field}
                 />
               )}
@@ -225,6 +230,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
                 <RichTextarea
                   placeholder={t("aiTab.transparencyNotice.otherMarking.placeholder")}
                   toolbar
+                  disabled={!canEdit}
                   {...field}
                 />
               )}
@@ -254,6 +260,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
                 <RichTextarea
                   placeholder={t("aiTab.risk.justification.placeholder")}
                   toolbar
+                  disabled={!canEdit}
                   {...field}
                 />
               )}
@@ -291,6 +298,7 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR }) => {
         </>
       )}
       <Button type="submit">{t("aiTab.submit")}</Button>
+      </fieldset>
     </form>
   );
 };

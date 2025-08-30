@@ -6,10 +6,11 @@ type Props = React.HTMLAttributes<HTMLDivElement> & {
   onChange?: (value: string) => void
   placeholder?: string
   toolbar?: boolean
+  disabled?: boolean
 }
 
 export const RichTextarea = React.forwardRef<HTMLDivElement, Props>(
-  ({ value, onChange, className, toolbar, ...props }, ref) => {
+  ({ value, onChange, className, toolbar, disabled, ...props }, ref) => {
     const { placeholder, ...rest } = props
     const editorRef = React.useRef<HTMLDivElement>(null)
 
@@ -108,9 +109,10 @@ export const RichTextarea = React.forwardRef<HTMLDivElement, Props>(
             'whitespace-pre-wrap',
             'empty:before:content-[attr(data-placeholder)] before:text-neutral-400 before:pointer-events-none',
             'rich-text',
+            disabled ? 'opacity-60 pointer-events-none' : '',
             className || '',
           ].join(' ')}
-          contentEditable
+          contentEditable={!disabled}
           onInput={handleInput}
           dangerouslySetInnerHTML={{ __html: value || '' }}
           data-placeholder={placeholder as any}
