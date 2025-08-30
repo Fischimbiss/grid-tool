@@ -243,7 +243,16 @@ function HighlightedText({ text }: { text: string }) {
 }
 
 export default function ToolReviewMockup() {
-  const hasRole = (_role: string) => true;
+  const [user, setUser] = useState({
+    name: 'Ich',
+    avatar: '',
+    roles: ['BR', 'F.SysV', 'HR'],
+    groups: ['Architektur-Team'],
+    currentRole: 'BR',
+  });
+  const [showProfile, setShowProfile] = useState(false);
+  const hasRole = (role: string) => user.currentRole === role;
+  const canEdit = hasRole('F.SysV') || hasRole('HR');
   const [currentStage, setCurrentStage] = useState(2); // 0-based index of the current status
   // active Tab
   const [activeKey, setActiveKey] = useState(NAV_ITEMS[0].key);
@@ -304,13 +313,21 @@ export default function ToolReviewMockup() {
   ] as const;
 
   // Demo: aktueller Nutzer & Gruppen (für Sichtbarkeiten)
-  const currentUser = "Ich";
-  const currentGroups = ["Architektur-Team"];
+  const currentUser = user.name;
+  const currentGroups = user.groups;
 
   const activeItem = NAV_ITEMS.find((n) => n.key === activeKey) || NAV_ITEMS[0];
 
   // Refs für Scroll-to-Comment
   const commentItemRefs = useRef<Record<string, Record<number, HTMLElement>>>({});
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setUser((prev) => ({ ...prev, avatar: url }));
+    }
+  };
 
   // Persistenz
   useEffect(() => {
@@ -554,12 +571,24 @@ export default function ToolReviewMockup() {
           <h1 className="text-2xl font-bold">SYSTEM NAME</h1>
           <span className="text-gray-600 block mt-1">GRIP-ID: 1234-ABC-15</span>
         </div>
-        <Button
-          className="bg-pink-500 hover:bg-pink-600 text-white"
-          onClick={() => setShowBearbeiter(true)}
-        >
-          <User size={16} /> Bearbeiter
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            className="bg-pink-500 hover:bg-pink-600 text-white"
+            onClick={() => setShowBearbeiter(true)}
+          >
+            <User size={16} /> Bearbeiter
+          </Button>
+          <button
+            onClick={() => setShowProfile(true)}
+            className="w-10 h-10 rounded-full overflow-hidden border-2 border-gray-300 flex items-center justify-center bg-white"
+          >
+            {user.avatar ? (
+              <img src={user.avatar} alt="Profil" className="w-full h-full object-cover" />
+            ) : (
+              <User size={20} className="text-gray-500" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Fortschritt */}
@@ -676,7 +705,7 @@ export default function ToolReviewMockup() {
                 {activeKey === "roles" ? (
                   <div className="space-y-4">
                     {/* Add new badge */}
-                    {hasRole('FSO') || hasRole('Admin') ? (
+                    {canEdit ? (
                       <div className="rounded-xl border bg-white p-4">
                         <div className="flex items-center justify-between mb-3">
                           <div className="font-semibold">Neue Rolle hinzufügen</div>
@@ -737,7 +766,7 @@ export default function ToolReviewMockup() {
                               )}
                             </div>
                             <div className="flex items-center gap-1">
-                              {hasRole('FSO') || hasRole('Admin') ? (
+                              {canEdit ? (
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -759,7 +788,7 @@ export default function ToolReviewMockup() {
                                   <Pencil size={16} />
                                 </Button>
                               )}
-                              {hasRole('FSO') || hasRole('Admin') ? (
+                              {canEdit ? (
                                 <Button
                                   variant="danger"
                                   size="icon"
@@ -836,7 +865,7 @@ export default function ToolReviewMockup() {
                                     </div>
                                   </div>
                                   <div className="flex justify-end gap-2">
-                                    {hasRole('FSO') || hasRole('Admin') ? (
+                                    {canEdit ? (
                                       <>
                                         <Button variant="neutral" onClick={() => toggleEdit(role.id)}>Abbrechen</Button>
                                         <Button onClick={() => toggleEdit(role.id)}>Speichern</Button>
@@ -857,7 +886,7 @@ export default function ToolReviewMockup() {
                     </div>
                   </div>
                 ) : activeKey === "basis" ? (
-                  <div className="space-y-6">
+                  <fieldset disabled={!canEdit} className="space-y-6">
                     {/* BASIS: Stammdaten */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
                       <div>
@@ -1008,7 +1037,7 @@ export default function ToolReviewMockup() {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </fieldset>
                 ) : activeKey === "ai" ? (
                   <AITab />
                 ) : (
@@ -1021,7 +1050,7 @@ export default function ToolReviewMockup() {
               {/* Weitere Angaben */}
               <div>
                 <h2 className="font-semibold mb-3">Weitere Angaben</h2>
-                <Textarea placeholder="Hier können zusätzliche Informationen eingetragen werden..." />
+                <Textarea placeholder="Hier können zusätzliche Informationen eingetragen werden..." disabled={!canEdit} />
               </div>
 
               {/* Kommentare – immer unten im Bereich */}
@@ -1371,6 +1400,68 @@ export default function ToolReviewMockup() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Profil Panel */}
+      {showProfile && (
+        <div className="fixed inset-0 z-40 flex justify-end">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowProfile(false)}></div>
+          <div className="relative bg-white w-80 h-full shadow-xl p-6 overflow-y-auto border-l border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Profil</h3>
+              <Button variant="neutral" size="sm" onClick={() => setShowProfile(false)}>
+                <X size={16} className="mr-1" /> Schließen
+              </Button>
+            </div>
+            <div className="space-y-4">
+              <div className="flex flex-col items-center">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                    {user.avatar ? (
+                      <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={40} className="text-gray-400" />
+                    )}
+                  </div>
+                  <input id="avatarUpload" type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                  <label htmlFor="avatarUpload" className="absolute bottom-0 right-0 p-1 bg-white rounded-full border cursor-pointer">
+                    <Pencil size={14} />
+                  </label>
+                </div>
+                <div className="mt-2 font-medium">{user.name}</div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Aktive Rolle</label>
+                <select
+                  className="border rounded px-2 py-1 w-full"
+                  value={user.currentRole}
+                  onChange={(e) => setUser((u) => ({ ...u, currentRole: e.target.value }))}
+                >
+                  {user.roles.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <div className="font-medium mb-1">Rollen</div>
+                <ul className="list-disc list-inside text-sm">
+                  {user.roles.map((r) => (
+                    <li key={r}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="font-medium mb-1">Gruppen</div>
+                <ul className="list-disc list-inside text-sm">
+                  {user.groups.map((g) => (
+                    <li key={g}>{g}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </div>
