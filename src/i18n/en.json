@@ -1,0 +1,116 @@
+{
+  "aiTab": {
+    "aiPresent": {
+      "label": "AI present",
+      "description": "Specify whether the system uses AI functionality.",
+      "checkbox": "AI present"
+    },
+    "processImpact": { "label": "Justification" },
+    "purpose": {
+      "label": "Purpose & scope",
+      "description": "Briefly describe the purpose and scope of the AI used."
+    },
+    "data": {
+      "label": "Data & processing",
+      "description": "Capture whether and which employee data is processed."
+    },
+    "personalDataUsed": { "label": "Employee data is processed" },
+    "personalDataCategories": {
+      "label": "Data categories",
+      "placeholder": "e.g. only login data, name, e-mail, etc."
+    },
+    "retention": { "label": "Retention period" },
+    "interfaces": {
+      "source": "Interface source",
+      "target": "Interface target",
+      "viaMiddleware": "via middleware"
+    },
+    "model": {
+      "label": "Model & architecture",
+      "description": "Provide details about the AI model and its deployment.",
+      "type": { "label": "Model type", "placeholder": "Type (e.g. LLM, diffusion, etc.)" },
+      "version": { "label": "Version", "placeholder": "Version (e.g. GPT-4o, Gemini 2.5 Pro, Claude 3.7, etc.)" },
+      "provider": { "label": "Provider", "placeholder": "Provider (e.g. openAI, Google, Microsoft, etc.)" },
+      "deployment": {
+        "label": "Deployment",
+        "onprem": "On-premise",
+        "saas": "SaaS",
+        "cloud": "Cloud"
+      },
+      "region": { "label": "Region", "placeholder": "Deployment region (e.g. DE, EU, USA, etc.)" },
+      "adaptation": {
+        "label": "Adaptation option",
+        "prompting": "Prompting",
+        "finetune": "Fine-tuning",
+        "rag": "RAG",
+        "other": "Other"
+      }
+    },
+    "autonomy": {
+      "label": "Autonomy & permissions",
+      "description": "Determine the autonomy level of the AI and required permissions.",
+      "options": {
+        "advice": "Assisting",
+        "partial": "Partial",
+        "autonomous": "Autonomous"
+      }
+    },
+    "hitlRequired": {
+      "label": "Human-in-the-loop required"
+    },
+    "hitl": {
+      "thresholds": {
+        "label": "Thresholds",
+        "placeholder": "Thresholds",
+        "help": "Defines when decisions are automated or reviewed by humans."
+      }
+    },
+    "permissionDimensions": {
+      "label": "Permission dimensions",
+      "placeholder": "Permission dimensions",
+      "help": "Describes the levels at which the AI receives permissions (e.g. data access, functions)."
+    },
+    "transparency": {
+      "label": "Transparency",
+      "description": "How is transparency regarding AI usage ensured for users?"
+    },
+    "transparencyNotice": {
+      "label": "AI notice is shown in the UI",
+      "noticeText": { "label": "Notice text (if already available)", "placeholder": "Notice text" },
+      "otherMarking": { "label": "Other marking", "placeholder": "Other marking" }
+    },
+    "risk": {
+      "label": "Risk",
+      "description": "Assess the risk according to the EU AI Act and corporate classification.",
+      "eu_ai_act": {
+        "label": "Classification according to EU AI Act",
+        "minimal": "Minimal",
+        "limited": "Limited",
+        "high": "High",
+        "prohibited": "Prohibited"
+      },
+      "corp_class": {
+        "label": "Corporate classification",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
+      "justification": {
+        "label": "Justification",
+        "placeholder": "Justification"
+      }
+    },
+    "dea": {
+      "label": "Digital Ethics Assessment (DEA)",
+      "description": "Document the result of the Digital Ethics Assessment.",
+      "date": { "label": "Date", "placeholder": "Date" },
+      "file": { "label": "Attach document" }
+    },
+    "deaCompleted": { "label": "DEA completed" },
+    "submit": "Submit"
+  },
+  "startPage": {
+    "roleLabel": "Role",
+    "newSystem": "Create new system"
+  }
+}

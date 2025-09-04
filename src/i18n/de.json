@@ -108,6 +108,10 @@
     },
     "deaCompleted": { "label": "DEA abgeschlossen" },
     "submit": "Absenden"
+  },
+  "startPage": {
+    "roleLabel": "Rolle",
+    "newSystem": "Neues System anlegen"
   }
 }
 

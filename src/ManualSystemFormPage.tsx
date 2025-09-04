@@ -1,16 +1,14 @@
 import ManualForm from './ManualForm'
 import { Button } from './components/ui/button'
 import type { System } from './mock/systems'
-import type { Role } from './StartPage'
 import { useEffect } from 'react'
 
 interface Props {
   onBack: () => void
   system?: System
-  role: Role
 }
 
-export default function ManualSystemFormPage({ onBack, system, role }: Props) {
+export default function ManualSystemFormPage({ onBack, system }: Props) {
   useEffect(() => {
     if (!system) {
       localStorage.removeItem('basis-info')
@@ -26,7 +24,7 @@ export default function ManualSystemFormPage({ onBack, system, role }: Props) {
           Zurück
         </Button>
       </div>
-      <ManualForm system={system} role={role} />
+      <ManualForm system={system} />
     </div>
   )
 }
