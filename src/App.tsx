@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom'
 import StartPage from './StartPage'
 import ManualSystemFormPage from './ManualSystemFormPage'
-import GuidedSystemPlaceholder from './GuidedSystemPlaceholder'
+import GuidedSystemForm from './GuidedSystemForm'
 import AgendaPlaceholder from './AgendaPlaceholder'
 import type { System } from './mock/systems'
 
@@ -44,7 +44,7 @@ export default function App() {
       />
       <Route
         path="/guided-system"
-        element={<GuidedSystemPlaceholder onBack={() => navigate('/')} />}
+        element={<GuidedSystemForm onBack={() => navigate('/')} />}
       />
       <Route
         path="/guided-agenda"
