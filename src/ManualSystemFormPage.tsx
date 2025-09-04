@@ -1,7 +1,15 @@
 import ManualForm from './ManualForm'
 import { Button } from './components/ui/button'
+import type { System } from './mock/systems'
+import type { Role } from './StartPage'
 
-export default function ManualSystemFormPage({ onBack }: { onBack: () => void }) {
+interface Props {
+  onBack: () => void
+  system?: System
+  role: Role
+}
+
+export default function ManualSystemFormPage({ onBack, system, role }: Props) {
   return (
     <div>
       <div className="p-4">
@@ -9,7 +17,7 @@ export default function ManualSystemFormPage({ onBack }: { onBack: () => void })
           Zurück
         </Button>
       </div>
-      <ManualForm />
+      <ManualForm system={system} role={role} />
     </div>
   )
 }

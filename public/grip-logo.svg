@@ -1,0 +1,9 @@
+<svg width="200" height="80" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
+  <path d="M60 60H40a12 12 0 110-24 18 18 0 0136-4 14 14 0 1128 8h-8" stroke="#E20074" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="68" y="48" width="12" height="12" fill="#E20074"/>
+  <rect x="100" y="48" width="12" height="12" fill="#E20074"/>
+  <rect x="100" y="16" width="12" height="12" fill="#E20074"/>
+  <line x1="80" y1="54" x2="100" y2="54" stroke="#E20074" stroke-width="4"/>
+  <line x1="106" y1="48" x2="106" y2="28" stroke="#E20074" stroke-width="4"/>
+  <text x="120" y="60" fill="#E20074" font-size="32" font-family="Arial, sans-serif" font-weight="bold">GRIP</text>
+</svg>
