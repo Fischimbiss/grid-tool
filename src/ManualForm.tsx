@@ -15,13 +15,6 @@ import {
   RotateCw,
   Plus,
   Trash,
-  FileText,
-  Cog,
-  Share2,
-  UserCog,
-  BarChart3,
-  Lock,
-  Bot,
   MessageSquare,
   Bell,
   AtSign,
@@ -48,20 +41,12 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import cn from 'classnames'
 import AITab from './AITab'
-import type { Role } from './StartPage'
+import { useUser } from './context/UserContext'
+import SectionNav from './manual-form/SectionNav'
+import { NAV_ITEMS, NavKey } from './manual-form/nav-items'
 import type { System } from './mock/systems'
 
 
-// Navigationseinträge
-const NAV_ITEMS = [
-  { key: "basis", label: "Basisinformationen", Icon: FileText },
-  { key: "system", label: "Systembeschreibung", Icon: Cog },
-  { key: "apis", label: "Schnittstellen", Icon: Share2 },
-  { key: "roles", label: "Rollen / Berechtigungen", Icon: UserCog },
-  { key: "reports", label: "Auswertungen / Reports", Icon: BarChart3 },
-  { key: "privacy", label: "Datenschutz / Compliance", Icon: Lock },
-  { key: "ai", label: "Künstliche Intelligenz", Icon: Bot }
-];
 
 const STAGES = [
   "Erstellung",
@@ -213,10 +198,10 @@ function HighlightedText({ text }: { text: string }) {
 
 interface ManualFormProps {
   system?: System
-  role: Role
 }
 
-export default function ManualForm({ system, role }: ManualFormProps) {
+export default function ManualForm({ system }: ManualFormProps) {
+  const { role } = useUser()
   const [user, setUser] = useState({
     name: 'Ich',
     avatar: '',
@@ -229,7 +214,7 @@ export default function ManualForm({ system, role }: ManualFormProps) {
   const canEdit = role === 'FSysV';
   const [currentStage, setCurrentStage] = useState(2); // 0-based index of the current status
   // active Tab
-  const [activeKey, setActiveKey] = useState(NAV_ITEMS[0].key);
+  const [activeKey, setActiveKey] = useState<NavKey>(NAV_ITEMS[0].key);
 
   // Rollen-State
   const [roles, setRoles] = useState<Role[]>(() => {
@@ -613,43 +598,18 @@ export default function ManualForm({ system, role }: ManualFormProps) {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Sidebar */}
         <div className="col-span-1 md:col-span-1">
-          <Card className="mb-4">
-            <CardContent className="p-4 space-y-2">
-              <div className="font-bold">Navigation</div>
-              <ul className="text-sm space-y-1">
-                {NAV_ITEMS.map(({ key, label, Icon }) => (
-                  <li key={key}>
-                    <div className="flex items-center justify-between">
-                      <button
-                        onClick={() => setActiveKey(key)}
-                        className={`flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md text-left transition ${
-                          key === activeKey ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200" : "hover:bg-gray-100"
-                        }`}
-                      >
-                        <Icon size={14} />
-                        <span>{label}</span>
-                      </button>
-                      {unreadBySection[key] > 0 && (
-                        <button
-                          title="Zum ersten ungelesenen Kommentar springen"
-                          onClick={() => {
-                            setActiveKey(key);
-                            setExpandedCommentSections((prev) => ({ ...prev, [key]: true }));
-                            scrollToFirstUnread(key);
-                          }}
-                          className={`ml-2 shrink-0 text-xs rounded-full px-2 py-0.5 text-white hover:opacity-90 ${
-                            unreadBySection[key] > 3 ? "bg-red-600" : unreadBySection[key] > 1 ? "bg-orange-500" : "bg-blue-500"
-                          }`}
-                        >
-                          {unreadBySection[key]}
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+          <div className="mb-4">
+            <SectionNav
+              activeKey={activeKey}
+              onSelect={setActiveKey}
+              unreadBySection={unreadBySection}
+              onJumpToFirstUnread={(key) => {
+                setActiveKey(key);
+                setExpandedCommentSections((prev) => ({ ...prev, [key]: true }));
+                scrollToFirstUnread(key);
+              }}
+            />
+          </div>
 
           {/* Allgemeine Kommentare (klickbar) */}
           <Card>

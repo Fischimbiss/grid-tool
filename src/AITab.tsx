@@ -7,7 +7,7 @@ import { Checkbox } from './components/ui/checkbox';
 import { Textarea } from './components/ui/textarea';
 import { RichTextarea } from './components/ui/rich-textarea';
 import { Button } from './components/ui/button';
-import { t } from "./i18n";
+import { useTranslation } from 'react-i18next';
 import { Select } from './components/ui/select';
 import CollapsibleCard from './components/ui/collapsible-card';
 
@@ -21,6 +21,7 @@ const corpRank = { low: 0, medium: 1, high: 2 } as const;
 const autoRank = { advice: 0, partial: 1, autonomous: 2 } as const;
 
 export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR, canEdit = true }) => {
+  const { t } = useTranslation();
   const form = useForm<AiFormData>({
     resolver: zodResolver(aiSchema),
     defaultValues: {
@@ -87,37 +88,8 @@ export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR, canEdit = tru
       )}
       {aiPresent && (
         <>
-          <CollapsibleCard title={`B: ${t("aiTab.purpose.label")}`}>
-            <p>{t("aiTab.purpose.description")}</p>
-            <Textarea maxLength={600} {...form.register('purpose')} />
-          </CollapsibleCard>
-
-          <CollapsibleCard title={`C: ${t("aiTab.data.label")}`}>
-            <p>{t("aiTab.data.description")}</p>
-            <label className="flex items-center gap-2">
-              <Checkbox {...form.register('personal_data_used')} /> {t("aiTab.personalDataUsed.label")}
-            </label>
-            {personalData && (
-              <div className="space-y-2 pl-4">
-                <label>{t("aiTab.personalDataCategories.label")}</label>
-                <Input
-                  {...form.register('personal_data_categories')}
-                  placeholder={t("aiTab.personalDataCategories.placeholder")}
-                />
-                <label>{t("aiTab.retention.label")}</label>
-                <Input {...form.register('retention')} />
-                <div>
-                  <label>{t("aiTab.interfaces.source")}</label>
-                  <Input {...form.register('interfaces.0.source')} />
-                  <label>{t("aiTab.interfaces.target")}</label>
-                  <Input {...form.register('interfaces.0.target')} />
-                  <label className="flex items-center gap-2">
-                    <Checkbox {...form.register('interfaces.0.via_middleware')} /> {t("aiTab.interfaces.viaMiddleware")}
-                  </label>
-                </div>
-              </div>
-            )}
-          </CollapsibleCard>
+            <PurposeSection form={form} />
+            <DataSection form={form} personalData={personalData} />
 
           <CollapsibleCard title={`D: ${t("aiTab.model.label")}`}>
             <p>{t("aiTab.model.description")}</p>

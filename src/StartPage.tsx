@@ -3,24 +3,22 @@ import { Button } from './components/ui/button'
 import { systems } from './mock/systems'
 import type { System } from './mock/systems'
 import { sessions } from './mock/sessions'
-
-export type Role = 'FSysV' | 'BR'
-
-const CURRENT_USER = 'Max Mustermann'
-const BR_GROUP = 'Sales'
+import { useNavigate } from 'react-router-dom'
+import { useUser, UserRole } from './context/UserContext'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
-  role: Role
-  onRoleChange: (r: Role) => void
-  navigate: (page: string) => void
   onSelectSystem: (s: System) => void
 }
 
-export default function StartPage({ role, onRoleChange, navigate, onSelectSystem }: Props) {
+export default function StartPage({ onSelectSystem }: Props) {
+  const navigate = useNavigate()
+  const { role, setRole, userName, group } = useUser()
+  const { t, i18n } = useTranslation()
   const mySystems = systems.filter(
-    (s) => s.createdBy === CURRENT_USER || s.fso === CURRENT_USER
+    (s) => s.createdBy === userName || s.fso === userName
   )
-  const groupSystems = systems.filter((s) => s.group === BR_GROUP)
+  const groupSystems = systems.filter((s) => s.group === group)
   const nextSession = sessions[0]
 
   return (
@@ -38,14 +36,26 @@ export default function StartPage({ role, onRoleChange, navigate, onSelectSystem
       </div>
 
       <div className="flex items-center space-x-2">
-        <label className="text-sm font-medium">Rolle:</label>
+        <label className="text-sm font-medium" htmlFor="role-select">
+          {t('startPage.roleLabel')}
+        </label>
         <select
+          id="role-select"
           value={role}
-          onChange={(e) => onRoleChange(e.target.value as Role)}
+          onChange={(e) => setRole(e.target.value as UserRole)}
           className="border rounded p-1"
         >
           <option value="FSysV">F.SysV</option>
           <option value="BR">BR</option>
+        </select>
+        <select
+          aria-label="Sprache"
+          value={i18n.language}
+          onChange={(e) => i18n.changeLanguage(e.target.value)}
+          className="border rounded p-1"
+        >
+          <option value="de">DE</option>
+          <option value="en">EN</option>
         </select>
       </div>
 
@@ -53,10 +63,10 @@ export default function StartPage({ role, onRoleChange, navigate, onSelectSystem
         <>
           <Card>
             <CardContent className="p-4 space-y-4">
-              <h2 className="text-xl font-semibold">Neues System anlegen</h2>
+              <h2 className="text-xl font-semibold">{t('startPage.newSystem')}</h2>
               <div className="space-x-2">
-                <Button onClick={() => navigate('guided-system')}>Geführter Dialog</Button>
-                <Button variant="secondary" onClick={() => navigate('manual-system')}>
+                <Button onClick={() => navigate('/guided-system')}>Geführter Dialog</Button>
+                <Button variant="secondary" onClick={() => navigate('/manual-system')}>
                   Manuell
                 </Button>
               </div>
@@ -89,8 +99,8 @@ export default function StartPage({ role, onRoleChange, navigate, onSelectSystem
             <CardContent className="p-4 space-y-4">
               <h2 className="text-xl font-semibold">Neue Tagesordnung anlegen</h2>
               <div className="space-x-2">
-                <Button onClick={() => navigate('guided-agenda')}>Geführter Dialog</Button>
-                <Button variant="secondary" onClick={() => navigate('manual-agenda')}>
+                <Button onClick={() => navigate('/guided-agenda')}>Geführter Dialog</Button>
+                <Button variant="secondary" onClick={() => navigate('/manual-agenda')}>
                   Manuell
                 </Button>
               </div>
