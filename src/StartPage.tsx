@@ -1,6 +1,7 @@
 import { Card, CardContent } from './components/ui/card'
 import { Button } from './components/ui/button'
 import { systems } from './mock/systems'
+import type { System } from './mock/systems'
 import { sessions } from './mock/sessions'
 
 export type Role = 'FSysV' | 'BR'
@@ -12,9 +13,10 @@ interface Props {
   role: Role
   onRoleChange: (r: Role) => void
   navigate: (page: string) => void
+  onSelectSystem: (s: System) => void
 }
 
-export default function StartPage({ role, onRoleChange, navigate }: Props) {
+export default function StartPage({ role, onRoleChange, navigate, onSelectSystem }: Props) {
   const mySystems = systems.filter(
     (s) => s.createdBy === CURRENT_USER || s.fso === CURRENT_USER
   )
@@ -23,6 +25,18 @@ export default function StartPage({ role, onRoleChange, navigate }: Props) {
 
   return (
     <div className="p-6 space-y-6">
+      <div className="flex items-center space-x-4">
+        <img src="/grip-logo.svg" alt="GRIP Logo" className="h-12" />
+        <h1 className="text-2xl font-bold text-neutral-800">
+          <span className="text-[#E20074]">GR</span>
+          <span className="text-neutral-800">emien‑</span>
+          <span className="text-[#E20074]">I</span>
+          <span className="text-neutral-800">ntegrations‑</span>
+          <span className="text-[#E20074]">P</span>
+          <span className="text-neutral-800">lattform</span>
+        </h1>
+      </div>
+
       <div className="flex items-center space-x-2">
         <label className="text-sm font-medium">Rolle:</label>
         <select
@@ -55,7 +69,12 @@ export default function StartPage({ role, onRoleChange, navigate }: Props) {
               <ul className="list-disc list-inside text-sm space-y-1">
                 {mySystems.map((s) => (
                   <li key={s.id}>
-                    {s.shortName} – {s.categories.basis.shortDescription}
+                    <button
+                      onClick={() => onSelectSystem(s)}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {s.shortName} – {s.categories.basis.shortDescription}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -83,7 +102,14 @@ export default function StartPage({ role, onRoleChange, navigate }: Props) {
               <h2 className="text-xl font-semibold mb-2">Systemgruppe</h2>
               <ul className="list-disc list-inside text-sm space-y-1">
                 {groupSystems.map((s) => (
-                  <li key={s.id}>{s.shortName}</li>
+                  <li key={s.id}>
+                    <button
+                      onClick={() => onSelectSystem(s)}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {s.shortName}
+                    </button>
+                  </li>
                 ))}
               </ul>
             </CardContent>

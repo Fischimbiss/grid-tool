@@ -48,6 +48,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import cn from 'classnames'
 import AITab from './AITab'
+import type { Role } from './StartPage'
+import type { System } from './mock/systems'
 
 
 // Navigationseinträge
@@ -242,17 +244,22 @@ function HighlightedText({ text }: { text: string }) {
   );
 }
 
-export default function ManualForm() {
+interface ManualFormProps {
+  system?: System
+  role: Role
+}
+
+export default function ManualForm({ system, role }: ManualFormProps) {
   const [user, setUser] = useState({
     name: 'Ich',
     avatar: '',
     roles: ['BR', 'F.SysV', 'HR'],
     groups: ['Architektur-Team'],
-    currentRole: 'BR',
+    currentRole: role,
   });
   const [showProfile, setShowProfile] = useState(false);
-  const hasRole = (role: string) => user.currentRole === role;
-  const canEdit = hasRole('F.SysV') || hasRole('HR');
+  const hasRole = (r: string) => role === r;
+  const canEdit = role === 'FSysV';
   const [currentStage, setCurrentStage] = useState(2); // 0-based index of the current status
   // active Tab
   const [activeKey, setActiveKey] = useState(NAV_ITEMS[0].key);
@@ -265,7 +272,18 @@ export default function ManualForm() {
 
   // Basisinformationen State
   const [basis, setBasis] = useState<BasisInfo>(() => {
-    const saved = localStorage.getItem("basis-info");
+    if (system) {
+      const initial = makeInitialBasis();
+      return {
+        ...initial,
+        shortName: system.shortName,
+        longName: system.longName,
+        psi: system.categories.basis.psi,
+        appId: system.categories.basis.appId,
+        shortDescription: system.categories.basis.shortDescription,
+      };
+    }
+    const saved = localStorage.getItem('basis-info');
     return saved ? JSON.parse(saved) : makeInitialBasis();
   });
 
