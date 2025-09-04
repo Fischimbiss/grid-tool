@@ -86,39 +86,6 @@ const STAGES = [
 };
 
 // Initialdaten basierend auf deiner Vorgabe
-const initialRoles: Role[] = [
-  {
-    id: 1,
-    number: "TA 1",
-    systemName: "Recruiter",
-    shopName: "SKM-DC-Recuiter",
-    userName: "Recruiter",
-    tasks: [
-      "Stellen anlegen und veröffentlichen",
-      "Kalibrierung",
-      "Sichtung und Prüfung von Kandidat*innen und Bewerber*innen",
-      "Kontaktieren von Kandidat*innen und Bewerber*innen",
-      "Kandidat*innen und Bewerber*innen in verschiedene Auswahlstatus verschieben",
-      "Absagen verschicken",
-      "Bewerber*innen zu Interviews einladen",
-      "Feedback der Führungskraft einholen",
-      "Communities anlegen und verwalten",
-      "Events und Kampagnen aufsetzen und managen"
-    ],
-    permissions: [
-      "Stellenausschreibungen",
-      "Kandidatendaten",
-      "Bewerberdaten",
-      "Communities",
-      "Events",
-      "Feedback Center",
-      "Scheduling Center",
-      "Reporting"
-    ],
-    expanded: false,
-    editing: false
-  }
-];
 
 // -------------------- Basisinformationen --------------------
 const ORGS: { code: string; label: string }[] = [
@@ -266,14 +233,16 @@ export default function ManualForm({ system, role }: ManualFormProps) {
 
   // Rollen-State
   const [roles, setRoles] = useState<Role[]>(() => {
-    const saved = localStorage.getItem("roles-badges");
-    return saved ? JSON.parse(saved) : initialRoles;
+    if (system && system.categories.roles) {
+      return system.categories.roles as Role[];
+    }
+    return [];
   });
 
   // Basisinformationen State
   const [basis, setBasis] = useState<BasisInfo>(() => {
+    const initial = makeInitialBasis();
     if (system) {
-      const initial = makeInitialBasis();
       return {
         ...initial,
         shortName: system.shortName,
@@ -281,10 +250,10 @@ export default function ManualForm({ system, role }: ManualFormProps) {
         psi: system.categories.basis.psi,
         appId: system.categories.basis.appId,
         shortDescription: system.categories.basis.shortDescription,
+        matrix: { ...initial.matrix, ...(system.categories.basis.matrix || {}) },
       };
     }
-    const saved = localStorage.getItem('basis-info');
-    return saved ? JSON.parse(saved) : makeInitialBasis();
+    return initial;
   });
 
   const [matrixExpanded, setMatrixExpanded] = useState(false);
@@ -295,10 +264,9 @@ export default function ManualForm({ system, role }: ManualFormProps) {
   >({ number: "", systemName: "", shopName: "", userName: "", expanded: true, editing: true });
 
   // Kommentare State
-  const [commentsBySection, setCommentsBySection] = useState<SectionComments>(() => {
-    const saved = localStorage.getItem("commentsBySection");
-    return saved ? JSON.parse(saved) : makeInitialComments();
-  });
+  const [commentsBySection, setCommentsBySection] = useState<SectionComments>(
+    makeInitialComments()
+  );
   const [expandedCommentSections, setExpandedCommentSections] = useState<Record<string, boolean>>({});
   const [collapsedComments, setCollapsedComments] = useState<Record<string, boolean>>({}); // Kompaktansicht pro Bereich
 
@@ -586,7 +554,7 @@ export default function ManualForm({ system, role }: ManualFormProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">SYSTEM NAME</h1>
+          <h1 className="text-2xl font-bold">{basis.shortName || 'SYSTEM NAME'}</h1>
           <span className="text-gray-600 block mt-1">GRIP-ID: 1234-ABC-15</span>
         </div>
         <div className="flex items-center gap-2">
@@ -1057,7 +1025,7 @@ export default function ManualForm({ system, role }: ManualFormProps) {
                     </div>
                   </fieldset>
                 ) : activeKey === "ai" ? (
-                  <AITab canEdit={canEdit} />
+                  <AITab canEdit={canEdit} lastSnapshot={system?.categories.ai} />
                 ) : (
                   <div className="rounded-md border p-4 text-sm text-gray-600 bg-white">
                     Inhalt für <span className="font-medium">{activeItem.label}</span>
