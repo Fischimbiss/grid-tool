@@ -1,0 +1,115 @@
+import { Card, CardContent } from './components/ui/card'
+import { Button } from './components/ui/button'
+import { systems } from './mock/systems'
+import { sessions } from './mock/sessions'
+
+export type Role = 'FSysV' | 'BR'
+
+const CURRENT_USER = 'Max Mustermann'
+const BR_GROUP = 'Sales'
+
+interface Props {
+  role: Role
+  onRoleChange: (r: Role) => void
+  navigate: (page: string) => void
+}
+
+export default function StartPage({ role, onRoleChange, navigate }: Props) {
+  const mySystems = systems.filter(
+    (s) => s.createdBy === CURRENT_USER || s.fso === CURRENT_USER
+  )
+  const groupSystems = systems.filter((s) => s.group === BR_GROUP)
+  const nextSession = sessions[0]
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center space-x-2">
+        <label className="text-sm font-medium">Rolle:</label>
+        <select
+          value={role}
+          onChange={(e) => onRoleChange(e.target.value as Role)}
+          className="border rounded p-1"
+        >
+          <option value="FSysV">F.SysV</option>
+          <option value="BR">BR</option>
+        </select>
+      </div>
+
+      {role === 'FSysV' && (
+        <>
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <h2 className="text-xl font-semibold">Neues System anlegen</h2>
+              <div className="space-x-2">
+                <Button onClick={() => navigate('guided-system')}>Geführter Dialog</Button>
+                <Button variant="secondary" onClick={() => navigate('manual-system')}>
+                  Manuell
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <h2 className="text-xl font-semibold mb-2">Meine Systeme</h2>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                {mySystems.map((s) => (
+                  <li key={s.id}>
+                    {s.shortName} – {s.categories.basis.shortDescription}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {role === 'BR' && (
+        <>
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <h2 className="text-xl font-semibold">Neue Tagesordnung anlegen</h2>
+              <div className="space-x-2">
+                <Button onClick={() => navigate('guided-agenda')}>Geführter Dialog</Button>
+                <Button variant="secondary" onClick={() => navigate('manual-agenda')}>
+                  Manuell
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <h2 className="text-xl font-semibold mb-2">Systemgruppe</h2>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                {groupSystems.map((s) => (
+                  <li key={s.id}>{s.shortName}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <h2 className="text-xl font-semibold mb-2">Aktuelle Sitzung</h2>
+              {nextSession ? (
+                <>
+                  <div className="text-sm mb-2">
+                    Nächste Sitzung am {new Date(nextSession.date).toLocaleDateString()}
+                  </div>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    {nextSession.agenda.map((a, i) => (
+                      <li key={i}>{a}</li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <div className="text-sm">Keine Sitzung geplant.</div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  )
+}
