@@ -10,6 +10,8 @@ import { Button } from './components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { Select } from './components/ui/select';
 import CollapsibleCard from './components/ui/collapsible-card';
+import PurposeSection from './ai-tab/PurposeSection';
+import DataSection from './ai-tab/DataSection';
 
 interface Props {
   lastSnapshot?: Partial<AiFormData>;
