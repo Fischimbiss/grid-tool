@@ -39,6 +39,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Select } from '@/components/ui/select'
 import cn from 'classnames'
 import AITab from './AITab'
 import { useUser } from './context/UserContext'
@@ -244,6 +245,148 @@ export default function ManualForm({ system }: ManualFormProps) {
 
   const [matrixExpanded, setMatrixExpanded] = useState(false);
 
+  // -------------------- Versionierung & Change Requests --------------------
+  type Snapshot = {
+    basis: BasisInfo;
+    roles: Array<Omit<Role, 'expanded' | 'editing'>>;
+  };
+
+  type VersionRecord = {
+    version: string; // e.g. "1.0", "1.1"
+    snapshot: Snapshot;
+    createdAt: number;
+    createdBy: string;
+  };
+
+  type DiffItem = {
+    path: string; // e.g. "basis.shortName" or "roles[0].systemName"
+    type: 'added' | 'removed' | 'changed';
+    before?: any;
+    after?: any;
+  };
+
+  type ChangeRequestRecord = {
+    id: string;
+    version: string; // proposed version (next from current)
+    fromVersion: string; // the base approved version
+    proposed: Snapshot; // full proposed snapshot
+    changes: DiffItem[]; // computed diff vs base
+    status: 'open' | 'approved' | 'rejected';
+    createdAt: number;
+    createdBy: string;
+    decidedAt?: number;
+    decidedBy?: string;
+  };
+
+  type VersioningState = {
+    gripId: string;
+    currentVersion: string | null; // becomes "1.0" after first Freigabe
+    versions: VersionRecord[]; // approved versions, latest matches currentVersion
+    changeRequests: ChangeRequestRecord[]; // open and decided CRs
+    activeView: { kind: 'current' } | { kind: 'cr'; id: string };
+  };
+
+  const versioningKey = `versioning-${system?.id ?? 'draft'}`;
+
+  const loadVersioning = (): VersioningState => {
+    try {
+      const raw = localStorage.getItem(versioningKey);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {
+      gripId: '1234-ABC-15',
+      currentVersion: null,
+      versions: [],
+      changeRequests: [],
+      activeView: { kind: 'current' },
+    };
+  };
+
+  const [versioning, setVersioning] = useState<VersioningState>(loadVersioning);
+
+  const persistVersioning = (next: VersioningState) => {
+    setVersioning(next);
+    try {
+      localStorage.setItem(versioningKey, JSON.stringify(next));
+    } catch {}
+  };
+
+  const getSnapshot = useCallback((): Snapshot => {
+    const normalizeRole = (r: Role): Omit<Role, 'expanded' | 'editing'> => ({
+      id: r.id,
+      number: r.number,
+      systemName: r.systemName,
+      shopName: r.shopName,
+      userName: r.userName,
+      tasks: r.tasks,
+      permissions: r.permissions,
+    });
+    return {
+      basis,
+      roles: roles.map(normalizeRole),
+    };
+  }, [basis, roles]);
+
+  const pathJoin = (base: string, segment: string) => (base ? `${base}.${segment}` : segment);
+
+  const diffValues = (before: any, after: any, basePath = ''): DiffItem[] => {
+    if (typeof before !== 'object' || before === null || typeof after !== 'object' || after === null) {
+      if (JSON.stringify(before) !== JSON.stringify(after)) {
+        return [{ path: basePath || '(root)', type: 'changed', before, after }];
+      }
+      return [];
+    }
+
+    if (Array.isArray(before) && Array.isArray(after)) {
+      // naive array diff based on index
+      const max = Math.max(before.length, after.length);
+      const items: DiffItem[] = [];
+      for (let i = 0; i < max; i++) {
+        const p = `${basePath}[${i}]`;
+        if (i >= before.length) {
+          items.push({ path: p, type: 'added', after: after[i] });
+        } else if (i >= after.length) {
+          items.push({ path: p, type: 'removed', before: before[i] });
+        } else {
+          items.push(...diffValues(before[i], after[i], p));
+        }
+      }
+      return items;
+    }
+
+    // object diff
+    const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+    const diffs: DiffItem[] = [];
+    keys.forEach((k) => {
+      const p = pathJoin(basePath, k);
+      if (!(k in before)) {
+        diffs.push({ path: p, type: 'added', after: (after as any)[k] });
+      } else if (!(k in after)) {
+        diffs.push({ path: p, type: 'removed', before: (before as any)[k] });
+      } else {
+        const sub = diffValues((before as any)[k], (after as any)[k], p);
+        diffs.push(...sub);
+      }
+    });
+    return diffs;
+  };
+
+  const computeDiff = useCallback((from: Snapshot, to: Snapshot): DiffItem[] => {
+    const diffs: DiffItem[] = [];
+    diffs.push(...diffValues(from.basis, to.basis, 'basis'));
+    diffs.push(...diffValues(from.roles, to.roles, 'roles'));
+    return diffs;
+  }, []);
+
+  const nextVersion = (current: string): string => {
+    const [majStr, minStr] = current.split('.');
+    const major = Number(majStr || '1');
+    const minor = Number(minStr || '0');
+    if (minor < 9) return `${major}.${minor + 1}`;
+    return `${major + 1}.0`;
+  };
+
+
   // Neuer-Badge-Entwurf
   const [draft, setDraft] = useState<
     Omit<Role, "id" | "tasks" | "permissions"> & { tasks?: string; permissions?: string }
@@ -316,6 +459,124 @@ export default function ManualForm({ system }: ManualFormProps) {
   useEffect(() => {
     localStorage.setItem("basis-info", JSON.stringify(basis));
   }, [basis]);
+
+  // Create baseline version 1.0 when first time reaching Freigabe
+  useEffect(() => {
+    const isAtFreigabe = currentStage === STAGES.length - 1;
+    if (!isAtFreigabe) return;
+    if (versioning.currentVersion) return;
+    // Create 1.0
+    const initialVersion = '1.0';
+    const snapshot = getSnapshot();
+    const vr: VersionRecord = {
+      version: initialVersion,
+      snapshot,
+      createdAt: Date.now(),
+      createdBy: user.name,
+    };
+    const nextState: VersioningState = {
+      ...versioning,
+      currentVersion: initialVersion,
+      versions: [vr],
+    };
+    persistVersioning(nextState);
+  }, [currentStage]);
+
+  const [suppressCR, setSuppressCR] = useState(false);
+
+  // Auto-create or update CR on any change after Freigabe
+  useEffect(() => {
+    if (suppressCR) return;
+    if (!versioning.currentVersion) return; // only after baseline exists
+    const base = versioning.versions.find(v => v.version === versioning.currentVersion);
+    if (!base) return;
+
+    const proposed = getSnapshot();
+    const changes = computeDiff(base.snapshot, proposed);
+    const hasChanges = changes.length > 0;
+
+    const openCr = versioning.changeRequests.find(cr => cr.status === 'open');
+    if (!hasChanges) {
+      // If no changes and we had an open CR, we keep it but with empty diff (user reverted changes)
+      if (openCr) {
+        const updated: VersioningState = {
+          ...versioning,
+          changeRequests: versioning.changeRequests.map(cr => cr.id === openCr.id ? { ...cr, proposed, changes } : cr)
+        };
+        persistVersioning(updated);
+      }
+      return;
+    }
+
+    if (openCr) {
+      const updated: VersioningState = {
+        ...versioning,
+        changeRequests: versioning.changeRequests.map(cr => cr.id === openCr.id ? { ...cr, proposed, changes } : cr)
+      };
+      persistVersioning(updated);
+      return;
+    }
+
+    // create new CR
+    const newVersion = nextVersion(versioning.currentVersion);
+    const cr: ChangeRequestRecord = {
+      id: `${Date.now()}`,
+      version: newVersion,
+      fromVersion: versioning.currentVersion,
+      proposed,
+      changes,
+      status: 'open',
+      createdAt: Date.now(),
+      createdBy: user.name,
+    };
+    const nextState: VersioningState = {
+      ...versioning,
+      changeRequests: [cr, ...versioning.changeRequests],
+      activeView: versioning.activeView.kind === 'current' ? { kind: 'cr', id: cr.id } : versioning.activeView,
+    };
+    persistVersioning(nextState);
+  }, [basis, roles]);
+
+  const activeCr = versioning.activeView.kind === 'cr' ? versioning.changeRequests.find(cr => cr.id === versioning.activeView.id) : undefined;
+
+  const approveCr = () => {
+    if (!activeCr) return;
+    // Apply proposed snapshot to state and finalize version
+    setSuppressCR(true);
+    try {
+      // apply basis
+      setBasis(activeCr.proposed.basis);
+      // apply roles
+      setRoles(activeCr.proposed.roles as any);
+
+      const vr: VersionRecord = {
+        version: activeCr.version,
+        snapshot: activeCr.proposed,
+        createdAt: Date.now(),
+        createdBy: user.name,
+      };
+      const updated: VersioningState = {
+        ...versioning,
+        currentVersion: activeCr.version,
+        versions: [...versioning.versions, vr],
+        changeRequests: versioning.changeRequests.map(cr => cr.id === activeCr.id ? { ...cr, status: 'approved', decidedAt: Date.now(), decidedBy: user.name } : cr),
+        activeView: { kind: 'current' },
+      };
+      persistVersioning(updated);
+    } finally {
+      setTimeout(() => setSuppressCR(false), 0);
+    }
+  };
+
+  const rejectCr = () => {
+    if (!activeCr) return;
+    const updated: VersioningState = {
+      ...versioning,
+      changeRequests: versioning.changeRequests.map(cr => cr.id === activeCr.id ? { ...cr, status: 'rejected', decidedAt: Date.now(), decidedBy: user.name } : cr),
+      activeView: { kind: 'current' },
+    };
+    persistVersioning(updated);
+  };
 
   // Reminder-Popups für private Wiedervorlagen
   useEffect(() => {
@@ -550,7 +811,34 @@ export default function ManualForm({ system }: ManualFormProps) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">{basis.shortName || 'SYSTEM NAME'}</h1>
-          <span className="text-gray-600 block mt-1">GRIP-ID: 1234-ABC-15</span>
+          <div className="text-gray-600 mt-1">
+            <div className="flex items-center gap-3">
+              <span className="block">GRIP-ID: {versioning.gripId}</span>
+              <div className="min-w-[220px]">
+                <Select
+                  value={versioning.activeView.kind === 'current' ? 'current' : `cr:${versioning.activeView.id}`}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'current') {
+                      persistVersioning({ ...versioning, activeView: { kind: 'current' } });
+                    } else if (val.startsWith('cr:')) {
+                      const id = val.slice(3);
+                      persistVersioning({ ...versioning, activeView: { kind: 'cr', id } });
+                    }
+                  }}
+                >
+                  <option value="current">Aktuelle Version: {versioning.currentVersion ?? '—'}</option>
+                  {versioning.changeRequests
+                    .filter(cr => cr.status === 'open')
+                    .map(cr => (
+                      <option key={cr.id} value={`cr:${cr.id}`}>
+                        Change Request v{cr.version} (offen)
+                      </option>
+                    ))}
+                </Select>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -571,6 +859,62 @@ export default function ManualForm({ system }: ManualFormProps) {
           </button>
         </div>
       </div>
+
+      {/* CR Banner / Änderungsmodus inkl. Historie */}
+      {versioning.activeView.kind === 'cr' && activeCr && (
+        <div className="mb-4 rounded-md border bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-semibold">Change Request v{activeCr.version} (von v{activeCr.fromVersion})</div>
+              <div className="text-xs text-gray-600">Erstellt von {activeCr.createdBy} am {new Date(activeCr.createdAt).toLocaleString()}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="neutral" onClick={() => persistVersioning({ ...versioning, activeView: { kind: 'current' } })}>Zur aktuellen Version</Button>
+              {isBR ? (
+                <>
+                  <Button onClick={approveCr} disabled={activeCr.changes.length === 0}>Freigeben & Übernehmen</Button>
+                  <Button variant="danger" onClick={rejectCr}>Ablehnen</Button>
+                </>
+              ) : (
+                <Button disabled title="Nur BR kann freigeben">Freigeben</Button>
+              )}
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-sm font-medium mb-2">Änderungsmodus inkl. Historie</div>
+            {activeCr.changes.length === 0 ? (
+              <div className="text-sm text-gray-500">Keine Änderungen gegenüber v{activeCr.fromVersion}.</div>
+            ) : (
+              <div className="max-h-64 overflow-auto border rounded-md">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left p-2 w-36">Art</th>
+                      <th className="text-left p-2">Pfad</th>
+                      <th className="text-left p-2 w-1/3">Vorher</th>
+                      <th className="text-left p-2 w-1/3">Nachher</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeCr.changes.map((c, i) => (
+                      <tr key={i} className={
+                        c.type === 'added' ? 'bg-green-50' : c.type === 'removed' ? 'bg-red-50' : 'bg-yellow-50'
+                      }>
+                        <td className="p-2">
+                          {c.type === 'added' ? 'Hinzugefügt' : c.type === 'removed' ? 'Gelöscht' : 'Geändert'}
+                        </td>
+                        <td className="p-2">{c.path}</td>
+                        <td className="p-2 text-xs text-gray-700 whitespace-pre-wrap">{typeof c.before === 'undefined' ? '—' : JSON.stringify(c.before, null, 2)}</td>
+                        <td className="p-2 text-xs text-gray-700 whitespace-pre-wrap">{typeof c.after === 'undefined' ? '—' : JSON.stringify(c.after, null, 2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Fortschritt */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
