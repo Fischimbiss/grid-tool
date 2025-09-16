@@ -39,6 +39,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Select } from '@/components/ui/select'
 import cn from 'classnames'
 import AITab from './AITab'
 import { useUser } from './context/UserContext'
@@ -211,6 +212,7 @@ export default function ManualForm({ system }: ManualFormProps) {
   });
   const [showProfile, setShowProfile] = useState(false);
   const hasRole = (r: string) => role === r;
+  const isBR = role === 'BR';
   const canEdit = role === 'FSysV';
   const [currentStage, setCurrentStage] = useState(2); // 0-based index of the current status
   // active Tab
@@ -242,6 +244,192 @@ export default function ManualForm({ system }: ManualFormProps) {
   });
 
   const [matrixExpanded, setMatrixExpanded] = useState(false);
+
+  // -------------------- Versionierung & Change Requests --------------------
+  type Snapshot = {
+    basis: BasisInfo;
+    roles: Array<Omit<Role, 'expanded' | 'editing'>>;
+  };
+
+  type VersionRecord = {
+    version: string; // e.g. "1.0", "1.1"
+    snapshot: Snapshot;
+    createdAt: number;
+    createdBy: string;
+  };
+
+  type DiffItem = {
+    path: string; // e.g. "basis.shortName" or "roles[0].systemName"
+    type: 'added' | 'removed' | 'changed';
+    before?: any;
+    after?: any;
+  };
+
+  type ChangeRequestRecord = {
+    id: string;
+    version: string; // proposed version (next from current)
+    fromVersion: string; // the base approved version
+    proposed: Snapshot; // full proposed snapshot
+    changes: DiffItem[]; // computed diff vs base
+    status: 'open' | 'approved' | 'rejected';
+    createdAt: number;
+    createdBy: string;
+    decidedAt?: number;
+    decidedBy?: string;
+  };
+
+  type VersioningState = {
+    gripId: string;
+    currentVersion: string | null; // becomes "1.0" after first Freigabe
+    versions: VersionRecord[]; // approved versions, latest matches currentVersion
+    changeRequests: ChangeRequestRecord[]; // open and decided CRs
+    activeView: { kind: 'current' } | { kind: 'cr'; id: string };
+  };
+
+  const versioningKey = `versioning-${system?.id ?? 'draft'}`;
+
+  const loadVersioning = (): VersioningState => {
+    try {
+      const raw = localStorage.getItem(versioningKey);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {
+      gripId: '1234-ABC-15',
+      currentVersion: null,
+      versions: [],
+      changeRequests: [],
+      activeView: { kind: 'current' },
+    };
+  };
+
+  const [versioning, setVersioning] = useState<VersioningState>(loadVersioning);
+
+  const persistVersioning = (next: VersioningState) => {
+    setVersioning(next);
+    try {
+      localStorage.setItem(versioningKey, JSON.stringify(next));
+    } catch {}
+  };
+
+  const createBaseline = useCallback(() => {
+    if (versioning.currentVersion) return;
+    const initialVersion = '1.0';
+    const snapshot = getSnapshot();
+    const vr: VersionRecord = {
+      version: initialVersion,
+      snapshot,
+      createdAt: Date.now(),
+      createdBy: user.name,
+    };
+    const nextState: VersioningState = {
+      ...versioning,
+      currentVersion: initialVersion,
+      versions: [vr],
+    };
+    persistVersioning(nextState);
+  }, [versioning, getSnapshot, user.name]);
+
+  const openCrFromCurrent = useCallback(() => {
+    if (!versioning.currentVersion) return;
+    const base = versioning.versions.find(v => v.version === versioning.currentVersion);
+    if (!base) return;
+    if (versioning.changeRequests.some(cr => cr.status === 'open')) return;
+    const proposed = getSnapshot();
+    const changes = computeDiff(base.snapshot, proposed);
+    if (changes.length === 0) return;
+    const cr: ChangeRequestRecord = {
+      id: `${Date.now()}`,
+      version: nextVersion(versioning.currentVersion),
+      fromVersion: versioning.currentVersion,
+      proposed,
+      changes,
+      status: 'open',
+      createdAt: Date.now(),
+      createdBy: user.name,
+    };
+    const nextState: VersioningState = {
+      ...versioning,
+      changeRequests: [cr, ...versioning.changeRequests],
+      activeView: { kind: 'cr', id: cr.id },
+    };
+    persistVersioning(nextState);
+  }, [versioning, getSnapshot, computeDiff, user.name]);
+
+  const getSnapshot = useCallback((): Snapshot => {
+    const normalizeRole = (r: Role): Omit<Role, 'expanded' | 'editing'> => ({
+      id: r.id,
+      number: r.number,
+      systemName: r.systemName,
+      shopName: r.shopName,
+      userName: r.userName,
+      tasks: r.tasks,
+      permissions: r.permissions,
+    });
+    return {
+      basis,
+      roles: roles.map(normalizeRole),
+    };
+  }, [basis, roles]);
+
+  const pathJoin = (base: string, segment: string) => (base ? `${base}.${segment}` : segment);
+
+  const diffValues = (before: any, after: any, basePath = ''): DiffItem[] => {
+    if (typeof before !== 'object' || before === null || typeof after !== 'object' || after === null) {
+      if (JSON.stringify(before) !== JSON.stringify(after)) {
+        return [{ path: basePath || '(root)', type: 'changed', before, after }];
+      }
+      return [];
+    }
+
+    if (Array.isArray(before) && Array.isArray(after)) {
+      // naive array diff based on index
+      const max = Math.max(before.length, after.length);
+      const items: DiffItem[] = [];
+      for (let i = 0; i < max; i++) {
+        const p = `${basePath}[${i}]`;
+        if (i >= before.length) {
+          items.push({ path: p, type: 'added', after: after[i] });
+        } else if (i >= after.length) {
+          items.push({ path: p, type: 'removed', before: before[i] });
+        } else {
+          items.push(...diffValues(before[i], after[i], p));
+        }
+      }
+      return items;
+    }
+
+    // object diff
+    const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+    const diffs: DiffItem[] = [];
+    keys.forEach((k) => {
+      const p = pathJoin(basePath, k);
+      if (!(k in before)) {
+        diffs.push({ path: p, type: 'added', after: (after as any)[k] });
+      } else if (!(k in after)) {
+        diffs.push({ path: p, type: 'removed', before: (before as any)[k] });
+      } else {
+        const sub = diffValues((before as any)[k], (after as any)[k], p);
+        diffs.push(...sub);
+      }
+    });
+    return diffs;
+  };
+
+  const computeDiff = useCallback((from: Snapshot, to: Snapshot): DiffItem[] => {
+    const diffs: DiffItem[] = [];
+    diffs.push(...diffValues(from.basis, to.basis, 'basis'));
+    diffs.push(...diffValues(from.roles, to.roles, 'roles'));
+    return diffs;
+  }, []);
+
+  const nextVersion = (current: string): string => {
+    const [majStr, minStr] = current.split('.');
+    const major = Number(majStr || '1');
+    const minor = Number(minStr || '0');
+    if (minor < 9) return `${major}.${minor + 1}`;
+    return `${major + 1}.0`;
+  };
+
 
   // Neuer-Badge-Entwurf
   const [draft, setDraft] = useState<
@@ -283,6 +471,11 @@ export default function ManualForm({ system }: ManualFormProps) {
     { key: 'group', label: 'Systemgruppe KBR', title: '', Icon: Users2 },
   ] as const;
 
+  const canEditBearbeiterField = (key: string) => {
+    if (!isBR) return true;
+    return key === 'aspBR' || key === 'group';
+  };
+
   // Demo: aktueller Nutzer & Gruppen (für Sichtbarkeiten)
   const currentUser = user.name;
   const currentGroups = user.groups;
@@ -310,6 +503,124 @@ export default function ManualForm({ system }: ManualFormProps) {
   useEffect(() => {
     localStorage.setItem("basis-info", JSON.stringify(basis));
   }, [basis]);
+
+  // Create baseline version 1.0 when first time reaching Freigabe
+  useEffect(() => {
+    const isAtFreigabe = currentStage === STAGES.length - 1;
+    if (!isAtFreigabe) return;
+    if (versioning.currentVersion) return;
+    // Create 1.0
+    const initialVersion = '1.0';
+    const snapshot = getSnapshot();
+    const vr: VersionRecord = {
+      version: initialVersion,
+      snapshot,
+      createdAt: Date.now(),
+      createdBy: user.name,
+    };
+    const nextState: VersioningState = {
+      ...versioning,
+      currentVersion: initialVersion,
+      versions: [vr],
+    };
+    persistVersioning(nextState);
+  }, [currentStage]);
+
+  const [suppressCR, setSuppressCR] = useState(false);
+
+  // Auto-create or update CR on any change after Freigabe
+  useEffect(() => {
+    if (suppressCR) return;
+    if (!versioning.currentVersion) return; // only after baseline exists
+    const base = versioning.versions.find(v => v.version === versioning.currentVersion);
+    if (!base) return;
+
+    const proposed = getSnapshot();
+    const changes = computeDiff(base.snapshot, proposed);
+    const hasChanges = changes.length > 0;
+
+    const openCr = versioning.changeRequests.find(cr => cr.status === 'open');
+    if (!hasChanges) {
+      // If no changes and we had an open CR, we keep it but with empty diff (user reverted changes)
+      if (openCr) {
+        const updated: VersioningState = {
+          ...versioning,
+          changeRequests: versioning.changeRequests.map(cr => cr.id === openCr.id ? { ...cr, proposed, changes } : cr)
+        };
+        persistVersioning(updated);
+      }
+      return;
+    }
+
+    if (openCr) {
+      const updated: VersioningState = {
+        ...versioning,
+        changeRequests: versioning.changeRequests.map(cr => cr.id === openCr.id ? { ...cr, proposed, changes } : cr)
+      };
+      persistVersioning(updated);
+      return;
+    }
+
+    // create new CR
+    const newVersion = nextVersion(versioning.currentVersion);
+    const cr: ChangeRequestRecord = {
+      id: `${Date.now()}`,
+      version: newVersion,
+      fromVersion: versioning.currentVersion,
+      proposed,
+      changes,
+      status: 'open',
+      createdAt: Date.now(),
+      createdBy: user.name,
+    };
+    const nextState: VersioningState = {
+      ...versioning,
+      changeRequests: [cr, ...versioning.changeRequests],
+      activeView: versioning.activeView.kind === 'current' ? { kind: 'cr', id: cr.id } : versioning.activeView,
+    };
+    persistVersioning(nextState);
+  }, [basis, roles]);
+
+  const activeCr = versioning.activeView.kind === 'cr' ? versioning.changeRequests.find(cr => cr.id === versioning.activeView.id) : undefined;
+
+  const approveCr = () => {
+    if (!activeCr) return;
+    // Apply proposed snapshot to state and finalize version
+    setSuppressCR(true);
+    try {
+      // apply basis
+      setBasis(activeCr.proposed.basis);
+      // apply roles
+      setRoles(activeCr.proposed.roles as any);
+
+      const vr: VersionRecord = {
+        version: activeCr.version,
+        snapshot: activeCr.proposed,
+        createdAt: Date.now(),
+        createdBy: user.name,
+      };
+      const updated: VersioningState = {
+        ...versioning,
+        currentVersion: activeCr.version,
+        versions: [...versioning.versions, vr],
+        changeRequests: versioning.changeRequests.map(cr => cr.id === activeCr.id ? { ...cr, status: 'approved', decidedAt: Date.now(), decidedBy: user.name } : cr),
+        activeView: { kind: 'current' },
+      };
+      persistVersioning(updated);
+    } finally {
+      setTimeout(() => setSuppressCR(false), 0);
+    }
+  };
+
+  const rejectCr = () => {
+    if (!activeCr) return;
+    const updated: VersioningState = {
+      ...versioning,
+      changeRequests: versioning.changeRequests.map(cr => cr.id === activeCr.id ? { ...cr, status: 'rejected', decidedAt: Date.now(), decidedBy: user.name } : cr),
+      activeView: { kind: 'current' },
+    };
+    persistVersioning(updated);
+  };
 
   // Reminder-Popups für private Wiedervorlagen
   useEffect(() => {
@@ -389,6 +700,7 @@ export default function ManualForm({ system }: ManualFormProps) {
   };
 
   const markAllReadInSection = (key: string) => {
+    if (isBR) return; // BR: read-only
     setCommentsBySection((prev) => ({
       ...prev,
       [key]: (prev[key] || []).map((c) => ({ ...c, read: true }))
@@ -396,6 +708,7 @@ export default function ManualForm({ system }: ManualFormProps) {
   };
 
   const toggleRead = (key: string, id: number) => {
+    if (isBR) return; // BR: read-only
     setCommentsBySection((prev) => ({
       ...prev,
       [key]: (prev[key] || []).map((c) => (c.id === id ? { ...c, read: !c.read } : c))
@@ -403,6 +716,7 @@ export default function ManualForm({ system }: ManualFormProps) {
   };
 
   const addReply = (sectionKey: string, commentId: number, text: string) => {
+    if (isBR) return; // BR: read-only
     setCommentsBySection((prev) => ({
       ...prev,
       [sectionKey]: (prev[sectionKey] || []).map((c) =>
@@ -424,6 +738,7 @@ export default function ManualForm({ system }: ManualFormProps) {
     group?: string,
     reminderISO?: string
   ) => {
+    if (isBR) return; // BR: read-only
     const reminder = visibility === VISIBILITY.PRIVATE && reminderISO ? new Date(reminderISO).getTime() : undefined;
     setCommentsBySection((prev) => ({
       ...prev,
@@ -540,7 +855,49 @@ export default function ManualForm({ system }: ManualFormProps) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">{basis.shortName || 'SYSTEM NAME'}</h1>
-          <span className="text-gray-600 block mt-1">GRIP-ID: 1234-ABC-15</span>
+          <div className="text-gray-600 mt-1">
+            <div className="flex items-center gap-3">
+              <span className="block">GRIP-ID: {versioning.gripId}</span>
+              <div className="min-w-[220px]">
+                <Select
+                  value={versioning.activeView.kind === 'current' ? 'current' : `cr:${versioning.activeView.id}`}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'current') {
+                      persistVersioning({ ...versioning, activeView: { kind: 'current' } });
+                    } else if (val.startsWith('cr:')) {
+                      const id = val.slice(3);
+                      persistVersioning({ ...versioning, activeView: { kind: 'cr', id } });
+                    }
+                  }}
+                >
+                  <option value="current">Aktuelle Version: {versioning.currentVersion ?? '—'}</option>
+                  {versioning.changeRequests
+                    .filter(cr => cr.status === 'open')
+                    .map(cr => (
+                      <option key={cr.id} value={`cr:${cr.id}`}>
+                        Change Request v{cr.version} (offen)
+                      </option>
+                    ))}
+                </Select>
+              </div>
+              <div className="flex items-center gap-2 ml-3">
+                {!versioning.currentVersion ? (
+                  <Button size="sm" onClick={createBaseline}>Baseline v1.0 erstellen</Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={openCrFromCurrent}
+                    disabled={versioning.changeRequests.some(cr => cr.status === 'open')}
+                    title={versioning.changeRequests.some(cr => cr.status === 'open') ? 'Es gibt bereits einen offenen CR' : ''}
+                  >
+                    CR manuell anlegen
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -561,6 +918,62 @@ export default function ManualForm({ system }: ManualFormProps) {
           </button>
         </div>
       </div>
+
+      {/* CR Banner / Änderungsmodus inkl. Historie */}
+      {versioning.activeView.kind === 'cr' && activeCr && (
+        <div className="mb-4 rounded-md border bg-white p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-semibold">Change Request v{activeCr.version} (von v{activeCr.fromVersion})</div>
+              <div className="text-xs text-gray-600">Erstellt von {activeCr.createdBy} am {new Date(activeCr.createdAt).toLocaleString()}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="neutral" onClick={() => persistVersioning({ ...versioning, activeView: { kind: 'current' } })}>Zur aktuellen Version</Button>
+              {isBR ? (
+                <>
+                  <Button onClick={approveCr} disabled={activeCr.changes.length === 0}>Freigeben & Übernehmen</Button>
+                  <Button variant="danger" onClick={rejectCr}>Ablehnen</Button>
+                </>
+              ) : (
+                <Button disabled title="Nur BR kann freigeben">Freigeben</Button>
+              )}
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="text-sm font-medium mb-2">Änderungsmodus inkl. Historie</div>
+            {activeCr.changes.length === 0 ? (
+              <div className="text-sm text-gray-500">Keine Änderungen gegenüber v{activeCr.fromVersion}.</div>
+            ) : (
+              <div className="max-h-64 overflow-auto border rounded-md">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left p-2 w-36">Art</th>
+                      <th className="text-left p-2">Pfad</th>
+                      <th className="text-left p-2 w-1/3">Vorher</th>
+                      <th className="text-left p-2 w-1/3">Nachher</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activeCr.changes.map((c, i) => (
+                      <tr key={i} className={
+                        c.type === 'added' ? 'bg-green-50' : c.type === 'removed' ? 'bg-red-50' : 'bg-yellow-50'
+                      }>
+                        <td className="p-2">
+                          {c.type === 'added' ? 'Hinzugefügt' : c.type === 'removed' ? 'Gelöscht' : 'Geändert'}
+                        </td>
+                        <td className="p-2">{c.path}</td>
+                        <td className="p-2 text-xs text-gray-700 whitespace-pre-wrap">{typeof c.before === 'undefined' ? '—' : JSON.stringify(c.before, null, 2)}</td>
+                        <td className="p-2 text-xs text-gray-700 whitespace-pre-wrap">{typeof c.after === 'undefined' ? '—' : JSON.stringify(c.after, null, 2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Fortschritt */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -639,6 +1052,59 @@ export default function ManualForm({ system }: ManualFormProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Versionen */}
+          <div className="mt-4">
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                <div className="font-semibold">Versionen</div>
+                {versioning.versions.length === 0 ? (
+                  <div className="text-sm text-gray-500">Noch keine freigegebene Version.</div>
+                ) : (
+                  <ul className="text-sm space-y-1">
+                    {versioning.versions.map(v => (
+                      <li key={v.version} className="flex items-center justify-between">
+                        <div>
+                          <span className="font-medium">v{v.version}</span>
+                          <span className="text-gray-500 ml-2">{new Date(v.createdAt).toLocaleString()}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">{v.createdBy}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Change Requests */}
+          <div className="mt-4">
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                <div className="font-semibold">Change Requests</div>
+                {versioning.changeRequests.length === 0 ? (
+                  <div className="text-sm text-gray-500">Keine Change Requests.</div>
+                ) : (
+                  <ul className="text-sm space-y-1">
+                    {versioning.changeRequests.map(cr => (
+                      <li key={cr.id} className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <div className="truncate">
+                            CR v{cr.version} von v{cr.fromVersion}
+                          </div>
+                          <div className="text-xs text-gray-500">{new Date(cr.createdAt).toLocaleString()} • {cr.createdBy}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${cr.status === 'open' ? 'bg-amber-100 text-amber-700' : cr.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{cr.status}</span>
+                          <Button size="sm" variant="secondary" onClick={() => persistVersioning({ ...versioning, activeView: { kind: 'cr', id: cr.id } })}>Öffnen</Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Main Content */}
@@ -1089,7 +1555,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                                 <Button size="sm" variant="neutral" onClick={() => toggleRead(activeKey, c.id)}>
                                   {c.read ? "Als ungelesen markieren" : "Als gelesen markieren"}
                                 </Button>
-                                <Button size="sm" variant="neutral" onClick={() => addReply(activeKey, c.id, "@Max Danke! #HR")}>Antworten</Button>
+                                <Button size="sm" variant="neutral" onClick={() => addReply(activeKey, c.id, "@Max Danke! #HR")} disabled={isBR}>Antworten</Button>
                               </div>
                             </div>
                           </div>
@@ -1100,7 +1566,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                     {/* Kommentar-Eingabe mit Sichtbarkeit & Wiedervorlage */}
                     <div className="rounded-md border p-3 bg-white space-y-3">
                       <label className="text-sm text-gray-600">Neuer Kommentar</label>
-                      <Textarea value={currentDraft.text} onChange={handleDraftChange} placeholder={`Kommentar zu "${activeItem.label}" hinzufügen... (Nutze @Nutzer und #Gruppe)`} />
+                      <Textarea value={currentDraft.text} onChange={handleDraftChange} placeholder={`Kommentar zu "${activeItem.label}" hinzufügen... (Nutze @Nutzer und #Gruppe)`} disabled={isBR} />
 
                       {mention.open && (
                         <div className="border rounded-md p-2 bg-gray-50 text-sm">
@@ -1122,7 +1588,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                         <div className="flex flex-col">
                           <label className="text-xs text-gray-500 mb-1">Sichtbarkeit</label>
-                          <select className="border rounded-md px-2 py-1 bg-white" value={currentDraft.visibility} onChange={(e) => setDraftField("visibility", e.target.value)}>
+                          <select className="border rounded-md px-2 py-1 bg-white" value={currentDraft.visibility} onChange={(e) => setDraftField("visibility", e.target.value)} disabled={isBR}>
                             <option value={VISIBILITY.ALL}>Alle</option>
                             <option value={VISIBILITY.GROUP}>Gruppe</option>
                             <option value={VISIBILITY.USER}>Einzelner Nutzer</option>
@@ -1132,25 +1598,25 @@ export default function ManualForm({ system }: ManualFormProps) {
                         {currentDraft.visibility === VISIBILITY.USER && (
                           <div className="flex flex-col">
                             <label className="text-xs text-gray-500 mb-1">Nutzer</label>
-                            <Input value={currentDraft.user || ""} onChange={(e) => setDraftField("user", e.target.value)} placeholder="Nutzername" />
+                            <Input value={currentDraft.user || ""} onChange={(e) => setDraftField("user", e.target.value)} placeholder="Nutzername" disabled={isBR} />
                           </div>
                         )}
                         {currentDraft.visibility === VISIBILITY.GROUP && (
                           <div className="flex flex-col">
                             <label className="text-xs text-gray-500 mb-1">Gruppe</label>
-                            <Input value={currentDraft.group || ""} onChange={(e) => setDraftField("group", e.target.value)} placeholder="Gruppenname" />
+                            <Input value={currentDraft.group || ""} onChange={(e) => setDraftField("group", e.target.value)} placeholder="Gruppenname" disabled={isBR} />
                           </div>
                         )}
                         {currentDraft.visibility === VISIBILITY.PRIVATE && (
                           <div className="flex flex-col">
                             <label className="text-xs text-gray-500 mb-1">Erinnerung (Datum & Uhrzeit)</label>
-                            <Input type="datetime-local" value={currentDraft.reminder || ""} onChange={(e) => setDraftField("reminder", e.target.value)} />
+                            <Input type="datetime-local" value={currentDraft.reminder || ""} onChange={(e) => setDraftField("reminder", e.target.value)} disabled={isBR} />
                           </div>
                         )}
                       </div>
 
                       <div className="flex gap-2 justify-end">
-                        <Button variant="neutral" onClick={() => setCommentDrafts((prev) => ({ ...prev, [activeKey]: { text: "", visibility: VISIBILITY.ALL } }))}>Zurücksetzen</Button>
+                        <Button variant="neutral" onClick={() => setCommentDrafts((prev) => ({ ...prev, [activeKey]: { text: "", visibility: VISIBILITY.ALL } }))} disabled={isBR}>Zurücksetzen</Button>
                         <Button
                           onClick={() => {
                             if (!currentDraft.text?.trim()) return;
@@ -1270,7 +1736,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                           <Button size="sm" variant="neutral" onClick={() => toggleRead(sectionKey, c.id)}>
                             {c.read ? "Ungelesen" : "Gelesen"}
                           </Button>
-                          <Button size="sm" variant="neutral" onClick={() => addReply(sectionKey, c.id, "Antwort aus Übersicht…")}>Antworten</Button>
+                          <Button size="sm" variant="neutral" onClick={() => addReply(sectionKey, c.id, "Antwort aus Übersicht…")} disabled={isBR}>Antworten</Button>
                         </div>
                       </td>
                     </tr>
@@ -1310,6 +1776,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                           onChange={(e) =>
                             setBearbeiter((prev) => ({ ...prev, [key]: e.target.value }))
                           }
+                          disabled={!canEditBearbeiterField(key)}
                         >
                           <option>Systemgruppe A</option>
                           <option>Systemgruppe B</option>
@@ -1322,6 +1789,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                           onChange={(e) =>
                             setBearbeiter((prev) => ({ ...prev, [key]: e.target.value }))
                           }
+                          disabled={!canEditBearbeiterField(key)}
                         />
                       )
                     ) : (
@@ -1337,8 +1805,13 @@ export default function ManualForm({ system }: ManualFormProps) {
                       </Button>
                     ) : (
                       <button
-                        className="p-1 text-gray-500 hover:text-gray-700"
-                        onClick={() => setEditingBearbeiter(key as string)}
+                        className={`p-1 ${canEditBearbeiterField(key) ? 'text-gray-500 hover:text-gray-700' : 'text-gray-300 cursor-not-allowed'}`}
+                        onClick={() => {
+                          if (!canEditBearbeiterField(key)) return;
+                          setEditingBearbeiter(key as string);
+                        }}
+                        disabled={!canEditBearbeiterField(key)}
+                        title={canEditBearbeiterField(key) ? 'Bearbeiten' : 'Keine Berechtigung'}
                       >
                         <Pencil size={16} />
                       </button>
