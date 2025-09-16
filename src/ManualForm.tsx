@@ -311,50 +311,6 @@ export default function ManualForm({ system }: ManualFormProps) {
     } catch {}
   };
 
-  const createBaseline = useCallback(() => {
-    if (versioning.currentVersion) return;
-    const initialVersion = '1.0';
-    const snapshot = getSnapshot();
-    const vr: VersionRecord = {
-      version: initialVersion,
-      snapshot,
-      createdAt: Date.now(),
-      createdBy: user.name,
-    };
-    const nextState: VersioningState = {
-      ...versioning,
-      currentVersion: initialVersion,
-      versions: [vr],
-    };
-    persistVersioning(nextState);
-  }, [versioning, getSnapshot, user.name]);
-
-  const openCrFromCurrent = useCallback(() => {
-    if (!versioning.currentVersion) return;
-    const base = versioning.versions.find(v => v.version === versioning.currentVersion);
-    if (!base) return;
-    if (versioning.changeRequests.some(cr => cr.status === 'open')) return;
-    const proposed = getSnapshot();
-    const changes = computeDiff(base.snapshot, proposed);
-    if (changes.length === 0) return;
-    const cr: ChangeRequestRecord = {
-      id: `${Date.now()}`,
-      version: nextVersion(versioning.currentVersion),
-      fromVersion: versioning.currentVersion,
-      proposed,
-      changes,
-      status: 'open',
-      createdAt: Date.now(),
-      createdBy: user.name,
-    };
-    const nextState: VersioningState = {
-      ...versioning,
-      changeRequests: [cr, ...versioning.changeRequests],
-      activeView: { kind: 'cr', id: cr.id },
-    };
-    persistVersioning(nextState);
-  }, [versioning, getSnapshot, computeDiff, user.name]);
-
   const getSnapshot = useCallback((): Snapshot => {
     const normalizeRole = (r: Role): Omit<Role, 'expanded' | 'editing'> => ({
       id: r.id,
@@ -421,6 +377,50 @@ export default function ManualForm({ system }: ManualFormProps) {
     diffs.push(...diffValues(from.roles, to.roles, 'roles'));
     return diffs;
   }, []);
+
+  const createBaseline = useCallback(() => {
+    if (versioning.currentVersion) return;
+    const initialVersion = '1.0';
+    const snapshot = getSnapshot();
+    const vr: VersionRecord = {
+      version: initialVersion,
+      snapshot,
+      createdAt: Date.now(),
+      createdBy: user.name,
+    };
+    const nextState: VersioningState = {
+      ...versioning,
+      currentVersion: initialVersion,
+      versions: [vr],
+    };
+    persistVersioning(nextState);
+  }, [versioning, getSnapshot, user.name]);
+
+  const openCrFromCurrent = useCallback(() => {
+    if (!versioning.currentVersion) return;
+    const base = versioning.versions.find((v) => v.version === versioning.currentVersion);
+    if (!base) return;
+    if (versioning.changeRequests.some((cr) => cr.status === 'open')) return;
+    const proposed = getSnapshot();
+    const changes = computeDiff(base.snapshot, proposed);
+    if (changes.length === 0) return;
+    const cr: ChangeRequestRecord = {
+      id: `${Date.now()}`,
+      version: nextVersion(versioning.currentVersion),
+      fromVersion: versioning.currentVersion,
+      proposed,
+      changes,
+      status: 'open',
+      createdAt: Date.now(),
+      createdBy: user.name,
+    };
+    const nextState: VersioningState = {
+      ...versioning,
+      changeRequests: [cr, ...versioning.changeRequests],
+      activeView: { kind: 'cr', id: cr.id },
+    };
+    persistVersioning(nextState);
+  }, [versioning, getSnapshot, computeDiff, user.name]);
 
   const nextVersion = (current: string): string => {
     const [majStr, minStr] = current.split('.');
@@ -1760,65 +1760,76 @@ export default function ManualForm({ system }: ManualFormProps) {
               </Button>
             </div>
             <div className="space-y-4">
-              {BEARBEITER_FIELDS.map(({ key, label, title, Icon }) => (
-                <div
-                  key={key}
-                  className="flex items-center gap-3 p-3 border rounded-md hover:bg-gray-50"
-                >
-                  <Icon size={18} className="text-gray-600" />
-                  <div className="flex-1" title={title}>
-                    <div className="text-sm font-medium">{label}</div>
-                    {editingBearbeiter === key ? (
-                      key === 'group' ? (
-                        <select
-                          className="mt-1 w-full border rounded px-2 py-1 text-sm"
-                          value={bearbeiter[key as keyof typeof bearbeiter] as string}
-                          onChange={(e) =>
-                            setBearbeiter((prev) => ({ ...prev, [key]: e.target.value }))
-                          }
-                          disabled={!canEditBearbeiterField(key)}
-                        >
-                          <option>Systemgruppe A</option>
-                          <option>Systemgruppe B</option>
-                          <option>Systemgruppe C</option>
-                        </select>
+              {BEARBEITER_FIELDS.map(({ key, label, title, Icon }) => {
+                const isEditing = editingBearbeiter === key;
+                const canEditField = canEditBearbeiterField(key);
+                const fieldValue = bearbeiter[key as keyof typeof bearbeiter] as string;
+
+                const handleChange = (value: string) => {
+                  if (!canEditField) return;
+                  setBearbeiter((prev) => ({ ...prev, [key]: value }));
+                };
+
+                return (
+                  <div
+                    key={key}
+                    className="flex items-center gap-3 p-3 border rounded-md hover:bg-gray-50"
+                  >
+                    <Icon size={18} className="text-gray-600" />
+                    <div className="flex-1" title={title}>
+                      <div className="text-sm font-medium">{label}</div>
+                      {isEditing ? (
+                        key === 'group' ? (
+                          <select
+                            className="mt-1 w-full border rounded px-2 py-1 text-sm"
+                            value={fieldValue}
+                            onChange={(e) => handleChange(e.target.value)}
+                            disabled={!canEditField}
+                          >
+                            <option>Systemgruppe A</option>
+                            <option>Systemgruppe B</option>
+                            <option>Systemgruppe C</option>
+                          </select>
+                        ) : (
+                          <Input
+                            className="mt-1"
+                            value={fieldValue}
+                            onChange={(e) => handleChange(e.target.value)}
+                            disabled={!canEditField}
+                          />
+                        )
                       ) : (
-                        <Input
-                          className="mt-1"
-                          value={bearbeiter[key as keyof typeof bearbeiter] as string}
-                          onChange={(e) =>
-                            setBearbeiter((prev) => ({ ...prev, [key]: e.target.value }))
+                        <div className="mt-1 text-sm text-gray-700">{fieldValue}</div>
+                      )}
+                    </div>
+                    <div>
+                      {isEditing ? (
+                        <Button size="sm" variant="secondary" onClick={() => setEditingBearbeiter(null)}>
+                          Speichern
+                        </Button>
+                      ) : (
+                        <button
+                          type="button"
+                          className={`p-1 ${canEditField ? 'text-gray-500 hover:text-gray-700' : 'text-gray-300 cursor-not-allowed'}`}
+                          onClick={() => {
+                            if (!canEditField) return;
+                            setEditingBearbeiter(key as string);
+                          }}
+                          disabled={!canEditField}
+                          aria-label={
+                            canEditField
+                              ? `${label} bearbeiten`
+                              : `${label} bearbeiten nicht erlaubt`
                           }
-                          disabled={!canEditBearbeiterField(key)}
-                        />
-                      )
-                    ) : (
-                      <div className="mt-1 text-sm text-gray-700">
-                        {bearbeiter[key as keyof typeof bearbeiter]}
-                      </div>
-                    )}
+                          title={canEditField ? 'Bearbeiten' : 'Keine Berechtigung'}
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    {editingBearbeiter === key ? (
-                      <Button size="sm" variant="secondary" onClick={() => setEditingBearbeiter(null)}>
-                        Speichern
-                      </Button>
-                    ) : (
-                      <button
-                        className={`p-1 ${canEditBearbeiterField(key) ? 'text-gray-500 hover:text-gray-700' : 'text-gray-300 cursor-not-allowed'}`}
-                        onClick={() => {
-                          if (!canEditBearbeiterField(key)) return;
-                          setEditingBearbeiter(key as string);
-                        }}
-                        disabled={!canEditBearbeiterField(key)}
-                        title={canEditBearbeiterField(key) ? 'Bearbeiten' : 'Keine Berechtigung'}
-                      >
-                        <Pencil size={16} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
