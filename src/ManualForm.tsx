@@ -311,6 +311,50 @@ export default function ManualForm({ system }: ManualFormProps) {
     } catch {}
   };
 
+  const createBaseline = useCallback(() => {
+    if (versioning.currentVersion) return;
+    const initialVersion = '1.0';
+    const snapshot = getSnapshot();
+    const vr: VersionRecord = {
+      version: initialVersion,
+      snapshot,
+      createdAt: Date.now(),
+      createdBy: user.name,
+    };
+    const nextState: VersioningState = {
+      ...versioning,
+      currentVersion: initialVersion,
+      versions: [vr],
+    };
+    persistVersioning(nextState);
+  }, [versioning, getSnapshot, user.name]);
+
+  const openCrFromCurrent = useCallback(() => {
+    if (!versioning.currentVersion) return;
+    const base = versioning.versions.find(v => v.version === versioning.currentVersion);
+    if (!base) return;
+    if (versioning.changeRequests.some(cr => cr.status === 'open')) return;
+    const proposed = getSnapshot();
+    const changes = computeDiff(base.snapshot, proposed);
+    if (changes.length === 0) return;
+    const cr: ChangeRequestRecord = {
+      id: `${Date.now()}`,
+      version: nextVersion(versioning.currentVersion),
+      fromVersion: versioning.currentVersion,
+      proposed,
+      changes,
+      status: 'open',
+      createdAt: Date.now(),
+      createdBy: user.name,
+    };
+    const nextState: VersioningState = {
+      ...versioning,
+      changeRequests: [cr, ...versioning.changeRequests],
+      activeView: { kind: 'cr', id: cr.id },
+    };
+    persistVersioning(nextState);
+  }, [versioning, getSnapshot, computeDiff, user.name]);
+
   const getSnapshot = useCallback((): Snapshot => {
     const normalizeRole = (r: Role): Omit<Role, 'expanded' | 'editing'> => ({
       id: r.id,
@@ -837,6 +881,21 @@ export default function ManualForm({ system }: ManualFormProps) {
                     ))}
                 </Select>
               </div>
+              <div className="flex items-center gap-2 ml-3">
+                {!versioning.currentVersion ? (
+                  <Button size="sm" onClick={createBaseline}>Baseline v1.0 erstellen</Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={openCrFromCurrent}
+                    disabled={versioning.changeRequests.some(cr => cr.status === 'open')}
+                    title={versioning.changeRequests.some(cr => cr.status === 'open') ? 'Es gibt bereits einen offenen CR' : ''}
+                  >
+                    CR manuell anlegen
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -993,6 +1052,59 @@ export default function ManualForm({ system }: ManualFormProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Versionen */}
+          <div className="mt-4">
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                <div className="font-semibold">Versionen</div>
+                {versioning.versions.length === 0 ? (
+                  <div className="text-sm text-gray-500">Noch keine freigegebene Version.</div>
+                ) : (
+                  <ul className="text-sm space-y-1">
+                    {versioning.versions.map(v => (
+                      <li key={v.version} className="flex items-center justify-between">
+                        <div>
+                          <span className="font-medium">v{v.version}</span>
+                          <span className="text-gray-500 ml-2">{new Date(v.createdAt).toLocaleString()}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">{v.createdBy}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Change Requests */}
+          <div className="mt-4">
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                <div className="font-semibold">Change Requests</div>
+                {versioning.changeRequests.length === 0 ? (
+                  <div className="text-sm text-gray-500">Keine Change Requests.</div>
+                ) : (
+                  <ul className="text-sm space-y-1">
+                    {versioning.changeRequests.map(cr => (
+                      <li key={cr.id} className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <div className="truncate">
+                            CR v{cr.version} von v{cr.fromVersion}
+                          </div>
+                          <div className="text-xs text-gray-500">{new Date(cr.createdAt).toLocaleString()} • {cr.createdBy}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${cr.status === 'open' ? 'bg-amber-100 text-amber-700' : cr.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{cr.status}</span>
+                          <Button size="sm" variant="secondary" onClick={() => persistVersioning({ ...versioning, activeView: { kind: 'cr', id: cr.id } })}>Öffnen</Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Main Content */}
