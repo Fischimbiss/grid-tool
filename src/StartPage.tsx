@@ -99,8 +99,8 @@ export default function StartPage({ onSelectSystem }: Props) {
             <CardContent className="p-4 space-y-4">
               <h2 className="text-xl font-semibold">Neue Tagesordnung anlegen</h2>
               <div className="space-x-2">
-                <Button onClick={() => navigate('/guided-agenda')}>Geführter Dialog</Button>
-                <Button variant="secondary" onClick={() => navigate('/manual-agenda')}>
+                <Button onClick={() => navigate('/guided-agenda')} disabled>Geführter Dialog</Button>
+                <Button variant="secondary" onClick={() => navigate('/manual-agenda')} disabled>
                   Manuell
                 </Button>
               </div>

@@ -12,8 +12,9 @@ const steps = ['Basisinformationen', 'Rollen/Berechtigungen', 'Künstliche Intel
 
 export default function GuidedSystemForm({ onBack }: { onBack: () => void }) {
   const [step, setStep] = useState(0)
-  const { userName, group } = useUser()
+  const { userName, group, role } = useUser()
   const navigate = useNavigate()
+  const canEdit = role === 'FSysV'
 
   // Basisinformationen
   const [basis, setBasis] = useState({
@@ -39,10 +40,11 @@ export default function GuidedSystemForm({ onBack }: { onBack: () => void }) {
   const [aiPresent, setAiPresent] = useState(false)
   const [aiPurpose, setAiPurpose] = useState('')
 
-  const next = () => setStep((s) => Math.min(s + 1, steps.length - 1))
-  const prev = () => setStep((s) => Math.max(s - 1, 0))
+  const next = () => canEdit && setStep((s) => Math.min(s + 1, steps.length - 1))
+  const prev = () => canEdit && setStep((s) => Math.max(s - 1, 0))
 
   const addRole = () => {
+    if (!canEdit) return
     if (!roleDraft.number || !roleDraft.systemName) return
     const newRole: SystemRole = {
       id: roles.length + 1,
@@ -58,6 +60,7 @@ export default function GuidedSystemForm({ onBack }: { onBack: () => void }) {
   }
 
   const finish = () => {
+    if (!canEdit) return
     const newSystem: System = {
       id: systems.length + 1,
       shortName: basis.shortName,
@@ -96,6 +99,7 @@ export default function GuidedSystemForm({ onBack }: { onBack: () => void }) {
             Schritt {step + 1} von {steps.length}: {steps[step]}
           </div>
 
+          <fieldset disabled={!canEdit} className="space-y-4">
           {step === 0 && (
             <div className="space-y-2">
               <Input
@@ -192,6 +196,7 @@ export default function GuidedSystemForm({ onBack }: { onBack: () => void }) {
               )}
             </div>
           )}
+          </fieldset>
 
           <div className="flex justify-between pt-4">
             {step > 0 && (
@@ -200,12 +205,12 @@ export default function GuidedSystemForm({ onBack }: { onBack: () => void }) {
               </Button>
             )}
             {step < steps.length - 1 && (
-              <Button onClick={next} disabled={step === 0 && !basis.shortName}>
+              <Button onClick={next} disabled={!canEdit || (step === 0 && !basis.shortName)}>
                 Weiter
               </Button>
             )}
             {step === steps.length - 1 && (
-              <Button onClick={finish} disabled={!basis.shortName}>
+              <Button onClick={finish} disabled={!canEdit || !basis.shortName}>
                 Fertigstellen
               </Button>
             )}

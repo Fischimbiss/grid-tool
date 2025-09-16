@@ -211,6 +211,7 @@ export default function ManualForm({ system }: ManualFormProps) {
   });
   const [showProfile, setShowProfile] = useState(false);
   const hasRole = (r: string) => role === r;
+  const isBR = role === 'BR';
   const canEdit = role === 'FSysV';
   const [currentStage, setCurrentStage] = useState(2); // 0-based index of the current status
   // active Tab
@@ -282,6 +283,11 @@ export default function ManualForm({ system }: ManualFormProps) {
     { key: 'aspSBV', label: 'ASP SBV', title: 'Ansprechpartner Schwerbehinderten vertretung', Icon: Accessibility },
     { key: 'group', label: 'Systemgruppe KBR', title: '', Icon: Users2 },
   ] as const;
+
+  const canEditBearbeiterField = (key: string) => {
+    if (!isBR) return true;
+    return key === 'aspBR' || key === 'group';
+  };
 
   // Demo: aktueller Nutzer & Gruppen (für Sichtbarkeiten)
   const currentUser = user.name;
@@ -389,6 +395,7 @@ export default function ManualForm({ system }: ManualFormProps) {
   };
 
   const markAllReadInSection = (key: string) => {
+    if (isBR) return; // BR: read-only
     setCommentsBySection((prev) => ({
       ...prev,
       [key]: (prev[key] || []).map((c) => ({ ...c, read: true }))
@@ -396,6 +403,7 @@ export default function ManualForm({ system }: ManualFormProps) {
   };
 
   const toggleRead = (key: string, id: number) => {
+    if (isBR) return; // BR: read-only
     setCommentsBySection((prev) => ({
       ...prev,
       [key]: (prev[key] || []).map((c) => (c.id === id ? { ...c, read: !c.read } : c))
@@ -403,6 +411,7 @@ export default function ManualForm({ system }: ManualFormProps) {
   };
 
   const addReply = (sectionKey: string, commentId: number, text: string) => {
+    if (isBR) return; // BR: read-only
     setCommentsBySection((prev) => ({
       ...prev,
       [sectionKey]: (prev[sectionKey] || []).map((c) =>
@@ -424,6 +433,7 @@ export default function ManualForm({ system }: ManualFormProps) {
     group?: string,
     reminderISO?: string
   ) => {
+    if (isBR) return; // BR: read-only
     const reminder = visibility === VISIBILITY.PRIVATE && reminderISO ? new Date(reminderISO).getTime() : undefined;
     setCommentsBySection((prev) => ({
       ...prev,
@@ -1089,7 +1099,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                                 <Button size="sm" variant="neutral" onClick={() => toggleRead(activeKey, c.id)}>
                                   {c.read ? "Als ungelesen markieren" : "Als gelesen markieren"}
                                 </Button>
-                                <Button size="sm" variant="neutral" onClick={() => addReply(activeKey, c.id, "@Max Danke! #HR")}>Antworten</Button>
+                                <Button size="sm" variant="neutral" onClick={() => addReply(activeKey, c.id, "@Max Danke! #HR")} disabled={isBR}>Antworten</Button>
                               </div>
                             </div>
                           </div>
@@ -1100,7 +1110,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                     {/* Kommentar-Eingabe mit Sichtbarkeit & Wiedervorlage */}
                     <div className="rounded-md border p-3 bg-white space-y-3">
                       <label className="text-sm text-gray-600">Neuer Kommentar</label>
-                      <Textarea value={currentDraft.text} onChange={handleDraftChange} placeholder={`Kommentar zu "${activeItem.label}" hinzufügen... (Nutze @Nutzer und #Gruppe)`} />
+                      <Textarea value={currentDraft.text} onChange={handleDraftChange} placeholder={`Kommentar zu "${activeItem.label}" hinzufügen... (Nutze @Nutzer und #Gruppe)`} disabled={isBR} />
 
                       {mention.open && (
                         <div className="border rounded-md p-2 bg-gray-50 text-sm">
@@ -1122,7 +1132,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                         <div className="flex flex-col">
                           <label className="text-xs text-gray-500 mb-1">Sichtbarkeit</label>
-                          <select className="border rounded-md px-2 py-1 bg-white" value={currentDraft.visibility} onChange={(e) => setDraftField("visibility", e.target.value)}>
+                          <select className="border rounded-md px-2 py-1 bg-white" value={currentDraft.visibility} onChange={(e) => setDraftField("visibility", e.target.value)} disabled={isBR}>
                             <option value={VISIBILITY.ALL}>Alle</option>
                             <option value={VISIBILITY.GROUP}>Gruppe</option>
                             <option value={VISIBILITY.USER}>Einzelner Nutzer</option>
@@ -1132,25 +1142,25 @@ export default function ManualForm({ system }: ManualFormProps) {
                         {currentDraft.visibility === VISIBILITY.USER && (
                           <div className="flex flex-col">
                             <label className="text-xs text-gray-500 mb-1">Nutzer</label>
-                            <Input value={currentDraft.user || ""} onChange={(e) => setDraftField("user", e.target.value)} placeholder="Nutzername" />
+                            <Input value={currentDraft.user || ""} onChange={(e) => setDraftField("user", e.target.value)} placeholder="Nutzername" disabled={isBR} />
                           </div>
                         )}
                         {currentDraft.visibility === VISIBILITY.GROUP && (
                           <div className="flex flex-col">
                             <label className="text-xs text-gray-500 mb-1">Gruppe</label>
-                            <Input value={currentDraft.group || ""} onChange={(e) => setDraftField("group", e.target.value)} placeholder="Gruppenname" />
+                            <Input value={currentDraft.group || ""} onChange={(e) => setDraftField("group", e.target.value)} placeholder="Gruppenname" disabled={isBR} />
                           </div>
                         )}
                         {currentDraft.visibility === VISIBILITY.PRIVATE && (
                           <div className="flex flex-col">
                             <label className="text-xs text-gray-500 mb-1">Erinnerung (Datum & Uhrzeit)</label>
-                            <Input type="datetime-local" value={currentDraft.reminder || ""} onChange={(e) => setDraftField("reminder", e.target.value)} />
+                            <Input type="datetime-local" value={currentDraft.reminder || ""} onChange={(e) => setDraftField("reminder", e.target.value)} disabled={isBR} />
                           </div>
                         )}
                       </div>
 
                       <div className="flex gap-2 justify-end">
-                        <Button variant="neutral" onClick={() => setCommentDrafts((prev) => ({ ...prev, [activeKey]: { text: "", visibility: VISIBILITY.ALL } }))}>Zurücksetzen</Button>
+                        <Button variant="neutral" onClick={() => setCommentDrafts((prev) => ({ ...prev, [activeKey]: { text: "", visibility: VISIBILITY.ALL } }))} disabled={isBR}>Zurücksetzen</Button>
                         <Button
                           onClick={() => {
                             if (!currentDraft.text?.trim()) return;
@@ -1270,7 +1280,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                           <Button size="sm" variant="neutral" onClick={() => toggleRead(sectionKey, c.id)}>
                             {c.read ? "Ungelesen" : "Gelesen"}
                           </Button>
-                          <Button size="sm" variant="neutral" onClick={() => addReply(sectionKey, c.id, "Antwort aus Übersicht…")}>Antworten</Button>
+                          <Button size="sm" variant="neutral" onClick={() => addReply(sectionKey, c.id, "Antwort aus Übersicht…")} disabled={isBR}>Antworten</Button>
                         </div>
                       </td>
                     </tr>
@@ -1310,6 +1320,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                           onChange={(e) =>
                             setBearbeiter((prev) => ({ ...prev, [key]: e.target.value }))
                           }
+                          disabled={!canEditBearbeiterField(key)}
                         >
                           <option>Systemgruppe A</option>
                           <option>Systemgruppe B</option>
@@ -1322,6 +1333,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                           onChange={(e) =>
                             setBearbeiter((prev) => ({ ...prev, [key]: e.target.value }))
                           }
+                          disabled={!canEditBearbeiterField(key)}
                         />
                       )
                     ) : (
@@ -1337,8 +1349,13 @@ export default function ManualForm({ system }: ManualFormProps) {
                       </Button>
                     ) : (
                       <button
-                        className="p-1 text-gray-500 hover:text-gray-700"
-                        onClick={() => setEditingBearbeiter(key as string)}
+                        className={`p-1 ${canEditBearbeiterField(key) ? 'text-gray-500 hover:text-gray-700' : 'text-gray-300 cursor-not-allowed'}`}
+                        onClick={() => {
+                          if (!canEditBearbeiterField(key)) return;
+                          setEditingBearbeiter(key as string);
+                        }}
+                        disabled={!canEditBearbeiterField(key)}
+                        title={canEditBearbeiterField(key) ? 'Bearbeiten' : 'Keine Berechtigung'}
                       >
                         <Pencil size={16} />
                       </button>
