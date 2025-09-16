@@ -32,14 +32,14 @@ describe('BR permissions', () => {
     expect(screen.getByText('ASP BR')).toBeInTheDocument()
     // Find edit buttons (pencil) near labels
     // We just assert the button next to ASP BR is enabled by clicking it
-    const aspBREntry = screen.getByText('ASP BR').closest('div')!.parentElement!
-    const editBtn = aspBREntry.querySelector('button') as HTMLButtonElement
-    expect(editBtn).toBeEnabled()
+    const aspBrButton = screen.getByRole('button', { name: /ASP BR bearbeiten/i })
+    expect(aspBrButton).toBeEnabled()
 
     // Fields like ASP HR should be disabled
-    const aspHREntry = screen.getByText('ASP HR').closest('div')!.parentElement!
-    const aspHrBtn = aspHREntry.querySelector('button') as HTMLButtonElement
-    expect(aspHrBtn).toBeDisabled()
+    const aspHrButton = screen.getByRole('button', {
+      name: /ASP HR bearbeiten nicht erlaubt/i,
+    })
+    expect(aspHrButton).toBeDisabled()
   })
 })
 
