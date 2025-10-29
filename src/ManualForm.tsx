@@ -40,12 +40,13 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
+import { RichTextarea } from '@/components/ui/rich-textarea'
 import cn from 'classnames'
 import AITab from './AITab'
 import { useUser } from './context/UserContext'
 import SectionNav from './manual-form/SectionNav'
 import { NAV_ITEMS, NavKey } from './manual-form/nav-items'
-import type { System } from './mock/systems'
+import { systems, type System, type RegulationStatus, type DevelopmentStatus, type SystemPropertyOption, type UiTypeOption, type TenantSeparationOption } from './mock/systems'
 
 
 
@@ -104,11 +105,21 @@ type BasisMatrixEntry = {
 };
 
 type BasisInfo = {
-  shortName: string; // Name/Kurzbezeichnung des Systems
-  longName: string; // Langbezeichnung des Systems
+  shortName: string; // Kurzbezeichnung des Systems / Projekts
+  longName: string; // Langbezeichnung des Systems / Projekts
   psi: string; // PSI-Nummer
-  appId: string; // T-App-ID/Sol-App-ID (alt: ICTO/COM)
-  shortDescription: string; // Kurzbeschreibung
+  regulationStatus: RegulationStatus; // Regelungsstatus des IT-Systems / Projekts
+  developmentStatus: DevelopmentStatus; // Entwicklungsstatus
+  replacingLegacy: boolean; // Ablösung Altsystem
+  legacyPsi: string; // PSI-Nummer Altsystem
+  legacyShortName: string; // Kurzbezeichnung Altsystem
+  legacyNotes: string; // Weitere Anmerkungen Altsystem
+  shortDescription: string; // Kurzbeschreibung des Systems (Rich Text)
+  aiPlanned: boolean; // KI geplant/vorhanden
+  interfacesPlanned: boolean; // Schnittstellen geplant/vorhanden
+  systemProperty: SystemPropertyOption; // Systemeigenschaft
+  uiType: UiTypeOption; // Benutzeroberfläche
+  tenantSeparation: TenantSeparationOption; // Mandantentrennung
   matrix: Record<string, BasisMatrixEntry>; // Betroffene Gesellschaften/Betriebe
 };
 
@@ -116,8 +127,18 @@ const makeInitialBasis = (): BasisInfo => ({
   shortName: "",
   longName: "",
   psi: "",
-  appId: "",
+  regulationStatus: "Neu",
+  developmentStatus: "in Vorbereitung",
+  replacingLegacy: false,
+  legacyPsi: "",
+  legacyShortName: "",
+  legacyNotes: "",
   shortDescription: "",
+  aiPlanned: false,
+  interfacesPlanned: false,
+  systemProperty: "none",
+  uiType: "gui",
+  tenantSeparation: "none",
   matrix: ORGS.reduce((acc, o) => {
     acc[o.code] = { active: false, data: false, activeCount: 0, dataCount: 0 };
     return acc;
@@ -235,13 +256,27 @@ export default function ManualForm({ system }: ManualFormProps) {
         shortName: system.shortName,
         longName: system.longName,
         psi: system.categories.basis.psi,
-        appId: system.categories.basis.appId,
+        regulationStatus: system.categories.basis.regulationStatus,
+        developmentStatus: system.categories.basis.developmentStatus,
+        replacingLegacy: system.categories.basis.replacingLegacy,
+        legacyPsi: system.categories.basis.legacyPsi,
+        legacyShortName: system.categories.basis.legacyShortName,
+        legacyNotes: system.categories.basis.legacyNotes,
         shortDescription: system.categories.basis.shortDescription,
+        aiPlanned: system.categories.basis.aiPlanned,
+        interfacesPlanned: system.categories.basis.interfacesPlanned,
+        systemProperty: system.categories.basis.systemProperty,
+        uiType: system.categories.basis.uiType,
+        tenantSeparation: system.categories.basis.tenantSeparation,
         matrix: { ...initial.matrix, ...(system.categories.basis.matrix || {}) },
       };
     }
     return initial;
   });
+
+  const [shortNameEdited, setShortNameEdited] = useState(false);
+  const [longNameEdited, setLongNameEdited] = useState(false);
+  const [legacyShortNameEdited, setLegacyShortNameEdited] = useState(false);
 
   const [matrixExpanded, setMatrixExpanded] = useState(false);
 
@@ -816,7 +851,8 @@ export default function ManualForm({ system }: ManualFormProps) {
   const truncate = (s: string, n = 100) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 
   // Basis-Helfer
-  const updateBasisField = (field: keyof BasisInfo, value: string) => setBasis((b) => ({ ...b, [field]: value }));
+  const updateBasisField = <K extends keyof BasisInfo>(field: K, value: BasisInfo[K]) =>
+    setBasis((b) => ({ ...b, [field]: value }));
   const setMatrixValue = (
     code: string,
     key: keyof BasisMatrixEntry,
@@ -845,9 +881,90 @@ export default function ManualForm({ system }: ManualFormProps) {
     setBasis((b) => ({
       ...b,
       matrix: Object.fromEntries(
-        Object.entries(b.matrix).map(([k, v]) => [k, { ...v, [type]: checked }])
+        Object.entries(b.matrix).map(([k, v]) => [
+          k,
+          {
+            ...v,
+            [type]: checked,
+            ...(checked ? {} : { [`${type}Count`]: 0 })
+          }
+        ])
       )
     }));
+
+  const handleRegulationStatusChange = (nextStatus: RegulationStatus) => {
+    setBasis((prev) => {
+      const updated: BasisInfo = { ...prev, regulationStatus: nextStatus };
+      if (nextStatus === "Nachregelung" || nextStatus === "Überführung") {
+        updated.developmentStatus = "bereits im Wirkbetrieb";
+      } else if (prev.developmentStatus === "bereits im Wirkbetrieb") {
+        updated.developmentStatus = "in Vorbereitung";
+      }
+      return updated;
+    });
+  };
+
+  const resetBasis = () => {
+    setBasis(makeInitialBasis());
+    setShortNameEdited(false);
+    setLongNameEdited(false);
+    setLegacyShortNameEdited(false);
+  };
+
+  const handleShortNameChange = (value: string) => {
+    setShortNameEdited(true);
+    updateBasisField("shortName", value);
+  };
+
+  const handleLongNameChange = (value: string) => {
+    setLongNameEdited(true);
+    updateBasisField("longName", value);
+  };
+
+  const handleLegacyShortNameChange = (value: string) => {
+    setLegacyShortNameEdited(true);
+    updateBasisField("legacyShortName", value);
+  };
+
+  useEffect(() => {
+    const trimmed = basis.psi.trim();
+    if (!trimmed) return;
+    const match = systems.find((s) => s.categories.basis.psi.toLowerCase() === trimmed.toLowerCase());
+    if (!match) return;
+    let changed = false;
+    setBasis((prev) => {
+      const next = { ...prev };
+      if (!shortNameEdited && prev.shortName !== match.shortName) {
+        next.shortName = match.shortName;
+        changed = true;
+      }
+      if (!longNameEdited && prev.longName !== match.longName) {
+        next.longName = match.longName;
+        changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [basis.psi, longNameEdited, shortNameEdited]);
+
+  useEffect(() => {
+    if (!basis.replacingLegacy) {
+      setLegacyShortNameEdited(false);
+      if (basis.legacyPsi || basis.legacyShortName || basis.legacyNotes) {
+        setBasis((prev) => ({
+          ...prev,
+          legacyPsi: "",
+          legacyShortName: "",
+          legacyNotes: "",
+        }));
+      }
+      return;
+    }
+    const trimmed = basis.legacyPsi.trim();
+    if (!trimmed || legacyShortNameEdited) return;
+    const match = systems.find((s) => s.categories.basis.psi.toLowerCase() === trimmed.toLowerCase());
+    if (!match) return;
+    setBasis((prev) => (prev.legacyShortName === match.shortName ? prev : { ...prev, legacyShortName: match.shortName }));
+  }, [basis.legacyPsi, basis.legacyShortName, basis.legacyNotes, basis.replacingLegacy, legacyShortNameEdited]);
 
     return (
       <div className="p-6 bg-gray-200 text-gray-900 min-h-screen">
@@ -1300,26 +1417,240 @@ export default function ManualForm({ system }: ManualFormProps) {
                 ) : activeKey === "basis" ? (
                   <fieldset disabled={!canEdit} className="space-y-6">
                     {/* BASIS: Stammdaten */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Name/Kurzbezeichnung des Systems</label>
-                        <Input value={basis.shortName} onChange={(e) => updateBasisField("shortName", e.target.value)} placeholder="z.B. CAIMAN" />
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">PSI-Nummer*</label>
+                          <Input
+                            value={basis.psi}
+                            onChange={(e) => updateBasisField("psi", e.target.value)}
+                            placeholder="z.B. PSI-123456"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Systemname wird bei bekannter PSI-Nummer automatisch ergänzt.
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Name Kurzbezeichnung des Systems / Projekts*</label>
+                          <Input
+                            value={basis.shortName}
+                            onChange={(e) => handleShortNameChange(e.target.value)}
+                            placeholder="z.B. CAIMAN"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Langbezeichnung des Systems / Projekts</label>
+                          <Input
+                            value={basis.longName}
+                            onChange={(e) => handleLongNameChange(e.target.value)}
+                            placeholder="Vollständiger Systemname"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Regelungsstatus des IT-System / Projekts*</label>
+                          <Select
+                            value={basis.regulationStatus}
+                            onChange={(e) => handleRegulationStatusChange(e.target.value as RegulationStatus)}
+                          >
+                            <option value="Neu">Neu</option>
+                            <option value="Nachregelung">Nachregelung</option>
+                            <option value="Überführung">Überführung</option>
+                          </Select>
+                          <div className="text-xs text-gray-500 mt-2 space-y-1">
+                            <div><span className="font-semibold">Neu</span> – Neues System / Projekt (bisher konzernweit noch nicht im Einsatz)</div>
+                            <div><span className="font-semibold">Nachregelung</span> – bestehendes System (bisher ohne Mitbestimmung)</div>
+                            <div><span className="font-semibold">Überführung</span> – bestehendes System (mit vorhandener KBR/GBR/BR-Regelung)</div>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Entwicklungsstatus*</label>
+                          <Select
+                            value={basis.developmentStatus}
+                            onChange={(e) => updateBasisField("developmentStatus", e.target.value as DevelopmentStatus)}
+                          >
+                            <option value="in Vorbereitung">in Vorbereitung</option>
+                            <option value="in Planung">in Planung</option>
+                            <option value="in Pilotierung">in Pilotierung</option>
+                            <option value="bereits im Wirkbetrieb">bereits im Wirkbetrieb</option>
+                          </Select>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Langbezeichnung des Systems</label>
-                        <Input value={basis.longName} onChange={(e) => updateBasisField("longName", e.target.value)} placeholder="Vollständiger Systemname" />
+
+                      <div className="space-y-2">
+                        <span className="block text-xs text-gray-500">Ablösung Altsystem*</span>
+                        <div className="flex flex-wrap gap-4 text-sm">
+                          <label className="inline-flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="legacy-replacement"
+                              checked={basis.replacingLegacy === true}
+                              onChange={() => updateBasisField("replacingLegacy", true)}
+                            />
+                            <span>Ja</span>
+                          </label>
+                          <label className="inline-flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="legacy-replacement"
+                              checked={basis.replacingLegacy === false}
+                              onChange={() => updateBasisField("replacingLegacy", false)}
+                            />
+                            <span>Nein</span>
+                          </label>
+                        </div>
+
+                        {basis.replacingLegacy && (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">PSI-Nummer Altsystem</label>
+                              <Input
+                                value={basis.legacyPsi}
+                                onChange={(e) => updateBasisField("legacyPsi", e.target.value)}
+                                placeholder="z.B. PSI-654321"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">Kurzbezeichnung wird – sofern bekannt – automatisch ergänzt.</p>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Name Kurzbezeichnung des Altsystems</label>
+                              <Input
+                                value={basis.legacyShortName}
+                                onChange={(e) => handleLegacyShortNameChange(e.target.value)}
+                                placeholder="z.B. LegacyCRM"
+                              />
+                            </div>
+                            <div className="lg:col-span-2">
+                              <label className="block text-xs text-gray-500 mb-1">Weitere Anmerkungen zum Altsystem</label>
+                              <Textarea
+                                rows={3}
+                                value={basis.legacyNotes}
+                                onChange={(e) => updateBasisField("legacyNotes", e.target.value)}
+                                placeholder="Relevante Informationen zum Altsystem"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
+
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">PSI-Nummer</label>
-                        <Input value={basis.psi} onChange={(e) => updateBasisField("psi", e.target.value)} placeholder="z.B. PSI-123456" />
+                        <label className="block text-xs text-gray-500 mb-1">Kurzbeschreibung des Systems*</label>
+                        <RichTextarea
+                          value={basis.shortDescription}
+                          onChange={(value) => updateBasisField("shortDescription", value)}
+                          placeholder="Kurzbeschreibung des Systems"
+                          toolbar
+                          disabled={!canEdit}
+                        />
                       </div>
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div>
+                          <span className="block text-xs text-gray-500 mb-1">KI geplant/vorhanden*</span>
+                          <div className="flex flex-wrap gap-4 text-sm">
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="ai-planned"
+                                checked={basis.aiPlanned === true}
+                                onChange={() => updateBasisField("aiPlanned", true)}
+                              />
+                              <span>Ja</span>
+                            </label>
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="ai-planned"
+                                checked={basis.aiPlanned === false}
+                                onChange={() => updateBasisField("aiPlanned", false)}
+                              />
+                              <span>Nein</span>
+                            </label>
+                          </div>
+                        </div>
+                        <div>
+                          <span className="block text-xs text-gray-500 mb-1">Schnittstellen geplant/vorhanden*</span>
+                          <div className="flex flex-wrap gap-4 text-sm">
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="interfaces-planned"
+                                checked={basis.interfacesPlanned === true}
+                                onChange={() => updateBasisField("interfacesPlanned", true)}
+                              />
+                              <span>Ja</span>
+                            </label>
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="interfaces-planned"
+                                checked={basis.interfacesPlanned === false}
+                                onChange={() => updateBasisField("interfacesPlanned", false)}
+                              />
+                              <span>Nein</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">T-App-ID/Sol-App-ID (alt: ICTO/COM)</label>
-                        <Input value={basis.appId} onChange={(e) => updateBasisField("appId", e.target.value)} placeholder="z.B. T-APP-xxxx / SOL-APP-xxxx" />
+                        <label className="block text-xs text-gray-500 mb-1">Systemeigenschaft*</label>
+                        <Select
+                          value={basis.systemProperty}
+                          onChange={(e) => updateBasisField("systemProperty", e.target.value as SystemPropertyOption)}
+                        >
+                          <option value="datendrehscheibe">Datendrehscheibe / Middleware</option>
+                          <option value="ohneLogin">Ohne Login und Beschäftigtendaten</option>
+                          <option value="none">Keine der genannten Optionen</option>
+                        </Select>
+                        <div className="text-xs text-gray-500 mt-2 space-y-3">
+                          <div>
+                            <span className="font-semibold">Datendrehscheibe / Middleware:</span> Für die Festlegung eines IT-Systems als Datendrehscheibe oder Middleware ist entscheidend, ob Anwender im engeren Sinne auf verarbeitete Daten zugreifen können. Prüfen Sie:
+                            <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                              <li>Hat das System nur eine Admin- oder Betriebs-/Betreiberrolle?</li>
+                              <li>Falls ja: beschränken sich diese Rollen ausschließlich auf Betrieb und Konfiguration und sind mögliche Auswertungen niemand anderem zugänglich?</li>
+                            </ul>
+                          </div>
+                          <div>
+                            <span className="font-semibold">Ohne Login- und Beschäftigtendaten:</span> Beispiele für personenbezogene Beschäftigtendaten sind u.a.:
+                            <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                              <li>Private Anschrift, Telefonnummer, Geburtsdatum</li>
+                              <li>E-Mail-Adressen</li>
+                              <li>Personal- oder Auftragsnummern</li>
+                              <li>Kontodaten und Log-In-Daten</li>
+                              <li>Beginn/Ende von Verbindungen, dynamische IP-Adressen, Ortungsdaten</li>
+                              <li>Einsatzplanung, Urlaubs- und Vertreterlisten</li>
+                              <li>Nicht öffentlich zugängliche personenbezogene Daten in Netzwerken</li>
+                              <li>Pseudonymisierte Daten</li>
+                            </ul>
+                          </div>
+                        </div>
                       </div>
-                      <div className="sm:col-span-2 xl:col-span-2">
-                        <label className="block text-xs text-gray-500 mb-1">Kurzbeschreibung</label>
-                        <Textarea rows={3} value={basis.shortDescription} onChange={(e) => updateBasisField("shortDescription", e.target.value)} placeholder="Kurzbeschreibung des Systems" />
+
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Benutzeroberfläche (GUI)</label>
+                          <Select
+                            value={basis.uiType}
+                            onChange={(e) => updateBasisField("uiType", e.target.value as UiTypeOption)}
+                          >
+                            <option value="gui">GUI (Web-Applikation / Client / App)</option>
+                            <option value="admin">Administrative Oberfläche (keine Nutzer, nur Administratoren)</option>
+                            <option value="terminal">Terminalfenster (Command Line)</option>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Mandantentrennung</label>
+                          <Select
+                            value={basis.tenantSeparation}
+                            onChange={(e) => updateBasisField("tenantSeparation", e.target.value as TenantSeparationOption)}
+                          >
+                            <option value="none">ohne Trennung</option>
+                            <option value="logical">logische Trennung (z.B. über Berechtigungen)</option>
+                            <option value="physical">physische Trennung (z.B. getrennte Datenhaltung)</option>
+                          </Select>
+                          <div className="text-xs text-gray-500 mt-2">
+                            Mandantentrennung bedeutet, dass Daten und Prozesse verschiedener Mandanten sauber voneinander abgegrenzt sind. Logische Trennung: gemeinsame Datenbasis, getrennt über Rollen/Berechtigungen. Physische Trennung: eigene Server, Datenbanken oder Instanzen je Mandant.
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -1327,8 +1658,8 @@ export default function ManualForm({ system }: ManualFormProps) {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-medium">Betroffene Gesellschaften/Betriebe</h3>
-                          <p className="text-xs text-gray-500">Wähle pro Einheit die Betroffenheit und gib die Anzahl der betroffenen Mitarbeitenden an.</p>
+                          <h3 className="font-medium">Betroffene Gesellschaften / Betriebe</h3>
+                          <p className="text-xs text-gray-500">Erfassen Sie potentiell Nutzende und potentielle Datenbetroffenheit pro Organisationseinheit.</p>
                         </div>
                         <Button variant="neutral" size="sm" onClick={() => setMatrixExpanded((e) => !e)} className="flex items-center gap-1">
                           {matrixExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -1345,14 +1676,14 @@ export default function ManualForm({ system }: ManualFormProps) {
                                 checked={Object.values(basis.matrix).every((m) => m.active)}
                                 onChange={(e) => selectAll("active", e.target.checked)}
                               />
-                              <span>Aktive Nutzung</span>
+                              <span>Potentiell Nutzende</span>
                             </label>
                             <label className="inline-flex items-center gap-1">
                               <Checkbox
                                 checked={Object.values(basis.matrix).every((m) => m.data)}
                                 onChange={(e) => selectAll("data", e.target.checked)}
                               />
-                              <span>Datenbetroffenheit</span>
+                              <span>Potentielle Datenbetroffenheit</span>
                             </label>
                           </div>
 
@@ -1361,8 +1692,8 @@ export default function ManualForm({ system }: ManualFormProps) {
                               <thead className="bg-gray-50">
                                 <tr>
                                   <th className="text-left p-2">Gesellschaft / Betrieb</th>
-                                  <th className="text-left p-2 w-48">Aktive Nutzung</th>
-                                  <th className="text-left p-2 w-56">Datenbetroffenheit</th>
+                                  <th className="text-left p-2 w-64">Anzahl potentiell Nutzende</th>
+                                  <th className="text-left p-2 w-64">Anzahl potentielle Datenbetroffenheit</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1413,7 +1744,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                           </div>
 
                           <div className="flex justify-end gap-2">
-                            <Button variant="danger" onClick={() => setBasis(makeInitialBasis())}>Zurücksetzen</Button>
+                            <Button variant="danger" onClick={resetBasis}>Zurücksetzen</Button>
                             <Button onClick={() => localStorage.setItem("basis-info", JSON.stringify(basis))}>Speichern</Button>
                           </div>
                         </>
@@ -1423,8 +1754,8 @@ export default function ManualForm({ system }: ManualFormProps) {
                             <thead className="bg-gray-50">
                               <tr>
                                 <th className="text-left p-2">Gesellschaft / Betrieb</th>
-                                <th className="text-left p-2 w-48">Aktive Nutzung</th>
-                                <th className="text-left p-2 w-56">Datenbetroffenheit</th>
+                                <th className="text-left p-2 w-64">Anzahl potentiell Nutzende</th>
+                                <th className="text-left p-2 w-64">Anzahl potentielle Datenbetroffenheit</th>
                               </tr>
                             </thead>
                             <tbody>

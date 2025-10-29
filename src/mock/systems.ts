@@ -7,6 +7,36 @@ export type BasisMatrixEntry = {
   dataCount: number
 }
 
+export type RegulationStatus = 'Neu' | 'Nachregelung' | 'Überführung'
+export type DevelopmentStatus =
+  | 'in Vorbereitung'
+  | 'in Planung'
+  | 'in Pilotierung'
+  | 'bereits im Wirkbetrieb'
+export type SystemPropertyOption =
+  | 'datendrehscheibe'
+  | 'ohneLogin'
+  | 'none'
+export type UiTypeOption = 'gui' | 'admin' | 'terminal'
+export type TenantSeparationOption = 'none' | 'logical' | 'physical'
+
+export type BasisCategory = {
+  psi: string
+  shortDescription: string
+  regulationStatus: RegulationStatus
+  developmentStatus: DevelopmentStatus
+  replacingLegacy: boolean
+  legacyPsi: string
+  legacyShortName: string
+  legacyNotes: string
+  aiPlanned: boolean
+  interfacesPlanned: boolean
+  systemProperty: SystemPropertyOption
+  uiType: UiTypeOption
+  tenantSeparation: TenantSeparationOption
+  matrix: Record<string, BasisMatrixEntry>
+}
+
 export type SystemRole = {
   id: number
   number: string
@@ -25,12 +55,7 @@ export interface System {
   createdBy: string
   fso: string
   categories: {
-    basis: {
-      psi: string
-      appId: string
-      shortDescription: string
-      matrix: Record<string, BasisMatrixEntry>
-    }
+    basis: BasisCategory
     system: { type: string; technology: string }
     interfaces: string[]
     roles: SystemRole[]
@@ -68,8 +93,18 @@ export const systems: System[] = [
     categories: {
       basis: {
         psi: 'PSI-001',
-        appId: 'APP-1001',
         shortDescription: 'Verwaltet Bewerbungsprozesse',
+        regulationStatus: 'Überführung',
+        developmentStatus: 'bereits im Wirkbetrieb',
+        replacingLegacy: false,
+        legacyPsi: '',
+        legacyShortName: '',
+        legacyNotes: '',
+        aiPlanned: true,
+        interfacesPlanned: true,
+        systemProperty: 'none',
+        uiType: 'gui',
+        tenantSeparation: 'logical',
         matrix: makeMatrix(),
       },
       system: { type: 'Web', technology: 'React' },
@@ -96,8 +131,18 @@ export const systems: System[] = [
     categories: {
       basis: {
         psi: 'PSI-002',
-        appId: 'APP-1002',
         shortDescription: 'CRM für den Vertrieb',
+        regulationStatus: 'Überführung',
+        developmentStatus: 'bereits im Wirkbetrieb',
+        replacingLegacy: true,
+        legacyPsi: 'PSI-998',
+        legacyShortName: 'LegacyCRM',
+        legacyNotes: 'Altsystem läuft parallel bis Q4.',
+        aiPlanned: true,
+        interfacesPlanned: true,
+        systemProperty: 'datendrehscheibe',
+        uiType: 'gui',
+        tenantSeparation: 'logical',
         matrix: makeMatrix(),
       },
       system: { type: 'Web', technology: 'Angular' },
@@ -124,8 +169,18 @@ export const systems: System[] = [
     categories: {
       basis: {
         psi: 'PSI-003',
-        appId: 'APP-1003',
         shortDescription: 'Analysen für Management',
+        regulationStatus: 'Nachregelung',
+        developmentStatus: 'bereits im Wirkbetrieb',
+        replacingLegacy: false,
+        legacyPsi: '',
+        legacyShortName: '',
+        legacyNotes: '',
+        aiPlanned: true,
+        interfacesPlanned: true,
+        systemProperty: 'none',
+        uiType: 'gui',
+        tenantSeparation: 'logical',
         matrix: makeMatrix(),
       },
       system: { type: 'Web', technology: 'Vue' },
@@ -152,8 +207,18 @@ export const systems: System[] = [
     categories: {
       basis: {
         psi: 'PSI-004',
-        appId: 'APP-1004',
         shortDescription: 'Kundenanfragen verwalten',
+        regulationStatus: 'Neu',
+        developmentStatus: 'in Pilotierung',
+        replacingLegacy: false,
+        legacyPsi: '',
+        legacyShortName: '',
+        legacyNotes: '',
+        aiPlanned: false,
+        interfacesPlanned: true,
+        systemProperty: 'none',
+        uiType: 'gui',
+        tenantSeparation: 'none',
         matrix: makeMatrix(),
       },
       system: { type: 'Web', technology: 'Laravel' },
