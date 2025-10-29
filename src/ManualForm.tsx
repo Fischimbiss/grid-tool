@@ -46,6 +46,7 @@ import AITab from './AITab'
 import { useUser } from './context/UserContext'
 import SectionNav from './manual-form/SectionNav'
 import { NAV_ITEMS, NavKey } from './manual-form/nav-items'
+import { InfoTooltip } from './components/InfoTooltip'
 import { systems, type System, type RegulationStatus, type DevelopmentStatus, type SystemPropertyOption, type UiTypeOption, type TenantSeparationOption } from './mock/systems'
 
 
@@ -1420,15 +1421,17 @@ export default function ManualForm({ system }: ManualFormProps) {
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">PSI-Nummer*</label>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            <span className="flex items-center gap-2">
+                              PSI-Nummer*
+                              <InfoTooltip content="Systemname wird bei bekannter PSI-Nummer automatisch ergänzt." />
+                            </span>
+                          </label>
                           <Input
                             value={basis.psi}
                             onChange={(e) => updateBasisField("psi", e.target.value)}
                             placeholder="z.B. PSI-123456"
                           />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Systemname wird bei bekannter PSI-Nummer automatisch ergänzt.
-                          </p>
                         </div>
                         <div>
                           <label className="block text-xs text-gray-500 mb-1">Name Kurzbezeichnung des Systems / Projekts*</label>
@@ -1447,7 +1450,26 @@ export default function ManualForm({ system }: ManualFormProps) {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">Regelungsstatus des IT-System / Projekts*</label>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            <span className="flex items-center gap-2">
+                              Regelungsstatus des IT-System / Projekts*
+                              <InfoTooltip
+                                content={
+                                  <div className="space-y-1">
+                                    <div>
+                                      <span className="font-semibold">Neu</span> – Neues System / Projekt (bisher konzernweit noch nicht im Einsatz)
+                                    </div>
+                                    <div>
+                                      <span className="font-semibold">Nachregelung</span> – bestehendes System (bisher ohne Mitbestimmung)
+                                    </div>
+                                    <div>
+                                      <span className="font-semibold">Überführung</span> – bestehendes System (mit vorhandener KBR/GBR/BR-Regelung)
+                                    </div>
+                                  </div>
+                                }
+                              />
+                            </span>
+                          </label>
                           <Select
                             value={basis.regulationStatus}
                             onChange={(e) => handleRegulationStatusChange(e.target.value as RegulationStatus)}
@@ -1456,11 +1478,6 @@ export default function ManualForm({ system }: ManualFormProps) {
                             <option value="Nachregelung">Nachregelung</option>
                             <option value="Überführung">Überführung</option>
                           </Select>
-                          <div className="text-xs text-gray-500 mt-2 space-y-1">
-                            <div><span className="font-semibold">Neu</span> – Neues System / Projekt (bisher konzernweit noch nicht im Einsatz)</div>
-                            <div><span className="font-semibold">Nachregelung</span> – bestehendes System (bisher ohne Mitbestimmung)</div>
-                            <div><span className="font-semibold">Überführung</span> – bestehendes System (mit vorhandener KBR/GBR/BR-Regelung)</div>
-                          </div>
                         </div>
                         <div>
                           <label className="block text-xs text-gray-500 mb-1">Entwicklungsstatus*</label>
@@ -1502,13 +1519,17 @@ export default function ManualForm({ system }: ManualFormProps) {
                         {basis.replacingLegacy && (
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             <div>
-                              <label className="block text-xs text-gray-500 mb-1">PSI-Nummer Altsystem</label>
+                              <label className="block text-xs text-gray-500 mb-1">
+                                <span className="flex items-center gap-2">
+                                  PSI-Nummer Altsystem
+                                  <InfoTooltip content="Kurzbezeichnung wird – sofern bekannt – automatisch ergänzt." />
+                                </span>
+                              </label>
                               <Input
                                 value={basis.legacyPsi}
                                 onChange={(e) => updateBasisField("legacyPsi", e.target.value)}
                                 placeholder="z.B. PSI-654321"
                               />
-                              <p className="text-xs text-gray-500 mt-1">Kurzbezeichnung wird – sofern bekannt – automatisch ergänzt.</p>
                             </div>
                             <div>
                               <label className="block text-xs text-gray-500 mb-1">Name Kurzbezeichnung des Altsystems</label>
@@ -1592,7 +1613,39 @@ export default function ManualForm({ system }: ManualFormProps) {
                       </div>
 
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Systemeigenschaft*</label>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          <span className="flex items-center gap-2">
+                            Systemeigenschaft*
+                            <InfoTooltip
+                              content={
+                                <div className="space-y-2">
+                                  <div>
+                                    <span className="font-semibold">Datendrehscheibe / Middleware:</span> Für die Festlegung eines IT-Systems als Datendrehscheibe oder Middleware ist entscheidend, ob Anwender im engeren Sinne auf verarbeitete Daten zugreifen können. Prüfen Sie:
+                                    <ul className="mt-1 list-disc pl-5 space-y-0.5">
+                                      <li>Hat das System nur eine Admin- oder Betriebs-/Betreiberrolle?</li>
+                                      <li>
+                                        Falls ja: beschränken sich diese Rollen ausschließlich auf Betrieb und Konfiguration und sind mögliche Auswertungen niemand anderem zugänglich?
+                                      </li>
+                                    </ul>
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Ohne Login- und Beschäftigtendaten:</span> Beispiele für personenbezogene Beschäftigtendaten sind u.a.:
+                                    <ul className="mt-1 list-disc pl-5 space-y-0.5">
+                                      <li>Private Anschrift, Telefonnummer, Geburtsdatum</li>
+                                      <li>E-Mail-Adressen</li>
+                                      <li>Personal- oder Auftragsnummern</li>
+                                      <li>Kontodaten und Log-In-Daten</li>
+                                      <li>Beginn/Ende von Verbindungen, dynamische IP-Adressen, Ortungsdaten</li>
+                                      <li>Einsatzplanung, Urlaubs- und Vertreterlisten</li>
+                                      <li>Nicht öffentlich zugängliche personenbezogene Daten in Netzwerken</li>
+                                      <li>Pseudonymisierte Daten</li>
+                                    </ul>
+                                  </div>
+                                </div>
+                              }
+                            />
+                          </span>
+                        </label>
                         <Select
                           value={basis.systemProperty}
                           onChange={(e) => updateBasisField("systemProperty", e.target.value as SystemPropertyOption)}
@@ -1601,28 +1654,6 @@ export default function ManualForm({ system }: ManualFormProps) {
                           <option value="ohneLogin">Ohne Login und Beschäftigtendaten</option>
                           <option value="none">Keine der genannten Optionen</option>
                         </Select>
-                        <div className="text-xs text-gray-500 mt-2 space-y-3">
-                          <div>
-                            <span className="font-semibold">Datendrehscheibe / Middleware:</span> Für die Festlegung eines IT-Systems als Datendrehscheibe oder Middleware ist entscheidend, ob Anwender im engeren Sinne auf verarbeitete Daten zugreifen können. Prüfen Sie:
-                            <ul className="list-disc pl-5 mt-1 space-y-0.5">
-                              <li>Hat das System nur eine Admin- oder Betriebs-/Betreiberrolle?</li>
-                              <li>Falls ja: beschränken sich diese Rollen ausschließlich auf Betrieb und Konfiguration und sind mögliche Auswertungen niemand anderem zugänglich?</li>
-                            </ul>
-                          </div>
-                          <div>
-                            <span className="font-semibold">Ohne Login- und Beschäftigtendaten:</span> Beispiele für personenbezogene Beschäftigtendaten sind u.a.:
-                            <ul className="list-disc pl-5 mt-1 space-y-0.5">
-                              <li>Private Anschrift, Telefonnummer, Geburtsdatum</li>
-                              <li>E-Mail-Adressen</li>
-                              <li>Personal- oder Auftragsnummern</li>
-                              <li>Kontodaten und Log-In-Daten</li>
-                              <li>Beginn/Ende von Verbindungen, dynamische IP-Adressen, Ortungsdaten</li>
-                              <li>Einsatzplanung, Urlaubs- und Vertreterlisten</li>
-                              <li>Nicht öffentlich zugängliche personenbezogene Daten in Netzwerken</li>
-                              <li>Pseudonymisierte Daten</li>
-                            </ul>
-                          </div>
-                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1638,7 +1669,12 @@ export default function ManualForm({ system }: ManualFormProps) {
                           </Select>
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">Mandantentrennung</label>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            <span className="flex items-center gap-2">
+                              Mandantentrennung
+                              <InfoTooltip content="Mandantentrennung bedeutet, dass Daten und Prozesse verschiedener Mandanten sauber voneinander abgegrenzt sind. Logische Trennung: gemeinsame Datenbasis, getrennt über Rollen/Berechtigungen. Physische Trennung: eigene Server, Datenbanken oder Instanzen je Mandant." />
+                            </span>
+                          </label>
                           <Select
                             value={basis.tenantSeparation}
                             onChange={(e) => updateBasisField("tenantSeparation", e.target.value as TenantSeparationOption)}
@@ -1647,9 +1683,6 @@ export default function ManualForm({ system }: ManualFormProps) {
                             <option value="logical">logische Trennung (z.B. über Berechtigungen)</option>
                             <option value="physical">physische Trennung (z.B. getrennte Datenhaltung)</option>
                           </Select>
-                          <div className="text-xs text-gray-500 mt-2">
-                            Mandantentrennung bedeutet, dass Daten und Prozesse verschiedener Mandanten sauber voneinander abgegrenzt sind. Logische Trennung: gemeinsame Datenbasis, getrennt über Rollen/Berechtigungen. Physische Trennung: eigene Server, Datenbanken oder Instanzen je Mandant.
-                          </div>
                         </div>
                       </div>
                     </div>

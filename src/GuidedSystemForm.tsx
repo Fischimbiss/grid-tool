@@ -5,6 +5,7 @@ import { Input } from './components/ui/input'
 import { Textarea } from './components/ui/textarea'
 import { Checkbox } from './components/ui/checkbox'
 import { Select } from './components/ui/select'
+import { InfoTooltip } from './components/InfoTooltip'
 import {
   systems,
   type SystemRole,
@@ -183,12 +184,15 @@ export default function GuidedSystemForm({ onBack }: { onBack: () => void }) {
           {step === 0 && (
             <div className="space-y-4">
               <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span>PSI-Nummer*</span>
+                  <InfoTooltip content="Systemname wird – sofern vorhanden – automatisch gefüllt." />
+                </div>
                 <Input
                   placeholder="PSI-Nummer"
                   value={basis.psi}
                   onChange={(e) => setBasis({ ...basis, psi: e.target.value })}
                 />
-                <p className="text-xs text-gray-500">Systemname wird – sofern vorhanden – automatisch gefüllt.</p>
               </div>
               <Input
                 placeholder="Name Kurzbezeichnung"
