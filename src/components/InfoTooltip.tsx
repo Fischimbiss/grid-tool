@@ -86,20 +86,9 @@ export function InfoTooltip({ content, className }: InfoTooltipProps) {
       <span className="inline-flex h-full w-full items-center justify-center rounded-full bg-blue-500 text-[10px] font-semibold text-white">
         i
       </span>
-
-      {isOpen &&
-        portalTarget &&
-        createPortal(
-          <div
-            ref={tooltipRef}
-            role="tooltip"
-            className="pointer-events-none fixed z-[9999] w-max max-w-[90vw] rounded-md bg-gray-900 p-3 text-xs text-white shadow-lg"
-            style={{ top: position.top, left: position.left }}
-          >
-            <div className="text-left sm:min-w-[16rem] sm:max-w-md lg:max-w-lg">{content}</div>
-          </div>,
-          portalTarget,
-        )}
+      <div className="pointer-events-none absolute left-1/2 top-full z-[9999] hidden -translate-x-1/2 translate-y-2 rounded-md bg-gray-900 p-3 text-xs text-white shadow-lg group-focus:block group-hover:block">
+        <div className="w-max max-w-[90vw] text-left sm:min-w-[16rem] sm:max-w-md lg:max-w-lg">{content}</div>
+      </div>
     </span>
   )
 }
