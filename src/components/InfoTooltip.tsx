@@ -19,7 +19,7 @@ export function InfoTooltip({ content, className }: InfoTooltipProps) {
         i
       </span>
       <div className="pointer-events-none absolute left-1/2 top-full z-10 hidden -translate-x-1/2 translate-y-2 rounded-md bg-gray-900 p-3 text-xs text-white shadow-lg group-focus:block group-hover:block">
-        <div className="max-w-sm text-left">{content}</div>
+        <div className="w-max max-w-[90vw] text-left sm:min-w-[16rem] sm:max-w-md lg:max-w-lg">{content}</div>
       </div>
     </span>
   )
