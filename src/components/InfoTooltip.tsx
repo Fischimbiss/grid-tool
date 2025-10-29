@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom'
-import type { ReactNode } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import cn from 'classnames'
 
@@ -55,7 +55,7 @@ export function InfoTooltip({ content, className }: InfoTooltipProps) {
       animationFrame = requestAnimationFrame(updatePosition)
     }
 
-    scheduleUpdate()
+    updatePosition()
 
     window.addEventListener('resize', scheduleUpdate)
     window.addEventListener('scroll', scheduleUpdate, true)
@@ -69,26 +69,47 @@ export function InfoTooltip({ content, className }: InfoTooltipProps) {
 
   const handleOpen = () => setIsOpen(true)
   const handleClose = () => setIsOpen(false)
+  const handleKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => {
+    if (event.key === 'Escape') {
+      handleClose()
+    }
+  }
+
+  const tooltip =
+    portalTarget && isOpen ? (
+      createPortal(
+        <div
+          ref={tooltipRef}
+          role="tooltip"
+          className="pointer-events-none fixed z-[9999] rounded-md bg-gray-900 p-3 text-xs text-white shadow-lg"
+          style={{ top: position.top, left: position.left }}
+        >
+          <div className="w-max max-w-[90vw] text-left sm:min-w-[16rem] sm:max-w-md lg:max-w-lg">{content}</div>
+        </div>,
+        portalTarget,
+      )
+    ) : null
 
   return (
-    <span
-      ref={triggerRef}
-      tabIndex={0}
-      onFocus={handleOpen}
-      onBlur={handleClose}
-      onMouseEnter={handleOpen}
-      onMouseLeave={handleClose}
-      className={cn(
-        'relative inline-flex h-4 w-4 cursor-help items-center justify-center outline-none',
-        className,
-      )}
-    >
-      <span className="inline-flex h-full w-full items-center justify-center rounded-full bg-blue-500 text-[10px] font-semibold text-white">
-        i
+    <>
+      <span
+        ref={triggerRef}
+        tabIndex={0}
+        onFocus={handleOpen}
+        onBlur={handleClose}
+        onMouseEnter={handleOpen}
+        onMouseLeave={handleClose}
+        onKeyDown={handleKeyDown}
+        className={cn(
+          'inline-flex h-4 w-4 cursor-help items-center justify-center outline-none',
+          className,
+        )}
+      >
+        <span className="inline-flex h-full w-full items-center justify-center rounded-full bg-blue-500 text-[10px] font-semibold text-white">
+          i
+        </span>
       </span>
-      <div className="pointer-events-none absolute left-1/2 top-full z-[9999] hidden -translate-x-1/2 translate-y-2 rounded-md bg-gray-900 p-3 text-xs text-white shadow-lg group-focus:block group-hover:block">
-        <div className="w-max max-w-[90vw] text-left sm:min-w-[16rem] sm:max-w-md lg:max-w-lg">{content}</div>
-      </div>
-    </span>
+      {tooltip}
+    </>
   )
 }
