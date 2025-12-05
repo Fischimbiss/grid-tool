@@ -73,6 +73,32 @@ const STAGES = [
   editing?: boolean;
 };
 
+// -------------------- Schnittstellen --------------------
+type InterfaceTypeOption = 'Schnittstelle' | 'API' | 'Microservice' | 'Manuell';
+type InterfaceDirectionOption = 'Eingehend' | 'Ausgehend' | 'Bidirektional';
+
+type InterfacePartner = {
+  id: number;
+  psi: string;
+  name: string;
+};
+
+type InterfaceEntry = {
+  id: number;
+  number: string;
+  name: string;
+  type: InterfaceTypeOption;
+  partner: InterfacePartner | null;
+  direction: InterfaceDirectionOption;
+  personalData: boolean | null;
+  smallGroupData: boolean | null;
+  dataDetails: string;
+  purpose: string;
+  attachments: string[];
+  expanded?: boolean;
+  editing?: boolean;
+};
+
 // Initialdaten basierend auf deiner Vorgabe
 
 // -------------------- Basisinformationen --------------------
@@ -248,6 +274,45 @@ export default function ManualForm({ system }: ManualFormProps) {
     return [];
   });
 
+  const makeInterfaceFromString = (name: string, idx: number): InterfaceEntry => ({
+    id: Date.now() + idx,
+    number: `I-${idx + 1}`,
+    name,
+    type: 'Schnittstelle',
+    partner: null,
+    direction: 'Bidirektional',
+    personalData: null,
+    smallGroupData: null,
+    dataDetails: '',
+    purpose: '',
+    attachments: [],
+    expanded: false,
+    editing: false,
+  });
+
+  const [interfaces, setInterfaces] = useState<InterfaceEntry[]>(() => {
+    if (system && system.categories.interfaces?.length) {
+      return system.categories.interfaces.map((name, idx) => makeInterfaceFromString(name, idx));
+    }
+    return [];
+  });
+
+  const emptyInterfaceDraft = (): Omit<InterfaceEntry, 'id' | 'expanded' | 'editing'> => ({
+    number: '',
+    name: '',
+    type: 'Schnittstelle',
+    partner: null,
+    direction: 'Eingehend',
+    personalData: null,
+    smallGroupData: null,
+    dataDetails: '',
+    purpose: '',
+    attachments: [],
+  });
+
+  const [interfaceDraft, setInterfaceDraft] = useState<Omit<InterfaceEntry, 'id' | 'expanded' | 'editing'>>(() => emptyInterfaceDraft());
+  const [interfaceSearchTerms, setInterfaceSearchTerms] = useState<Record<string, string>>({ draft: '' });
+
   // Basisinformationen State
   const [basis, setBasis] = useState<BasisInfo>(() => {
     const initial = makeInitialBasis();
@@ -285,6 +350,7 @@ export default function ManualForm({ system }: ManualFormProps) {
   type Snapshot = {
     basis: BasisInfo;
     roles: Array<Omit<Role, 'expanded' | 'editing'>>;
+    interfaces: Array<Omit<InterfaceEntry, 'expanded' | 'editing'>>;
   };
 
   type VersionRecord = {
@@ -357,11 +423,25 @@ export default function ManualForm({ system }: ManualFormProps) {
       tasks: r.tasks,
       permissions: r.permissions,
     });
+    const normalizeInterface = (i: InterfaceEntry): Omit<InterfaceEntry, 'expanded' | 'editing'> => ({
+      id: i.id,
+      number: i.number,
+      name: i.name,
+      type: i.type,
+      partner: i.partner,
+      direction: i.direction,
+      personalData: i.personalData,
+      smallGroupData: i.smallGroupData,
+      dataDetails: i.dataDetails,
+      purpose: i.purpose,
+      attachments: i.attachments,
+    });
     return {
       basis,
       roles: roles.map(normalizeRole),
+      interfaces: interfaces.map(normalizeInterface),
     };
-  }, [basis, roles]);
+  }, [basis, interfaces, roles]);
 
   const pathJoin = (base: string, segment: string) => (base ? `${base}.${segment}` : segment);
 
@@ -411,6 +491,7 @@ export default function ManualForm({ system }: ManualFormProps) {
     const diffs: DiffItem[] = [];
     diffs.push(...diffValues(from.basis, to.basis, 'basis'));
     diffs.push(...diffValues(from.roles, to.roles, 'roles'));
+    diffs.push(...diffValues(from.interfaces, to.interfaces, 'interfaces'));
     return diffs;
   }, []);
 
@@ -809,6 +890,67 @@ export default function ManualForm({ system }: ManualFormProps) {
     };
     setRoles((prev) => [newRole, ...prev]);
     setDraft({ number: "", systemName: "", shopName: "", userName: "", expanded: true, editing: true });
+  };
+
+  // --- Schnittstellen-Helper
+  const toggleInterfaceExpand = (id: number) =>
+    setInterfaces((prev) => prev.map((i) => (i.id === id ? { ...i, expanded: !i.expanded } : i)));
+
+  const toggleInterfaceEdit = (id: number) =>
+    setInterfaces((prev) => prev.map((i) => (i.id === id ? { ...i, editing: !i.editing, expanded: true } : i)));
+
+  const removeInterface = (id: number) => setInterfaces((prev) => prev.filter((i) => i.id !== id));
+
+  const updateInterfaceField = (id: number, field: keyof InterfaceEntry, value: any) =>
+    setInterfaces((prev) => prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
+
+  const updateInterfaceDraft = (field: keyof typeof interfaceDraft, value: any) =>
+    setInterfaceDraft((prev) => ({ ...prev, [field]: value }));
+
+  const parseSystemToPartner = (systemId: number): InterfacePartner | null => {
+    const sys = systems.find((s) => s.id === systemId);
+    if (!sys) return null;
+    return { id: sys.id, psi: sys.categories.basis.psi, name: sys.shortName };
+  };
+
+  const selectInterfacePartner = (key: string | number, partner: InterfacePartner | null) => {
+    if (key === 'draft') {
+      setInterfaceDraft((prev) => ({ ...prev, partner }));
+    } else {
+      setInterfaces((prev) => prev.map((i) => (i.id === key ? { ...i, partner } : i)));
+    }
+    setInterfaceSearchTerms((prev) => ({ ...prev, [key]: partner ? `${partner.psi} – ${partner.name}` : '' }));
+  };
+
+  const handlePartnerSearchChange = (key: string | number, value: string) => {
+    setInterfaceSearchTerms((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const getPartnerOptions = (term: string) => {
+    const q = term.toLowerCase();
+    if (!q) return systems.slice(0, 5);
+    return systems
+      .filter(
+        (s) =>
+          s.categories.basis.psi.toLowerCase().includes(q) ||
+          s.shortName.toLowerCase().includes(q) ||
+          s.longName.toLowerCase().includes(q) ||
+          `${s.id}`.includes(q)
+      )
+      .slice(0, 6);
+  };
+
+  const addInterface = () => {
+    if (!interfaceDraft.number.trim() || !interfaceDraft.name.trim()) return;
+    const newInterface: InterfaceEntry = {
+      id: Date.now(),
+      ...interfaceDraft,
+      expanded: true,
+      editing: false,
+    };
+    setInterfaces((prev) => [newInterface, ...prev]);
+    setInterfaceDraft(emptyInterfaceDraft());
+    setInterfaceSearchTerms((prev) => ({ ...prev, draft: '' }));
   };
 
   // Draft-Kommentar je Tab
@@ -1413,6 +1555,425 @@ export default function ManualForm({ system }: ManualFormProps) {
                           )}
                         </div>
                       ))}
+                    </div>
+                  </div>
+                ) : activeKey === "apis" ? (
+                  <div className="space-y-4">
+                    {canEdit ? (
+                      <div className="rounded-xl border bg-white p-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-semibold">Schnittstelle hinzufügen</div>
+                            <p className="text-xs text-gray-500">Füge eine neue Schnittstelle / API / Microservice hinzu.</p>
+                          </div>
+                          <Button size="sm" onClick={addInterface}>
+                            <Plus className="mr-2" size={16} /> Hinzufügen
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Nummer</label>
+                            <Input
+                              value={interfaceDraft.number}
+                              onChange={(e) => updateInterfaceDraft('number', e.target.value)}
+                              placeholder="z.B. SI-01"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Bezeichnung</label>
+                            <Input
+                              value={interfaceDraft.name}
+                              onChange={(e) => updateInterfaceDraft('name', e.target.value)}
+                              placeholder="z.B. HR-Reporting API"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Typ</label>
+                            <Select
+                              value={interfaceDraft.type}
+                              onChange={(e) => updateInterfaceDraft('type', e.target.value as InterfaceTypeOption)}
+                            >
+                              <option value="Schnittstelle">Schnittstelle</option>
+                              <option value="API">API</option>
+                              <option value="Microservice">Microservice</option>
+                              <option value="Manuell">Manuell</option>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Schnittstellenpartner / System</label>
+                            <Input
+                              value={interfaceSearchTerms.draft || interfaceDraft.partner ? `${interfaceDraft.partner?.psi} – ${interfaceDraft.partner?.name}` : ''}
+                              onChange={(e) => handlePartnerSearchChange('draft', e.target.value)}
+                              placeholder="System-ID, PSI-Nr. oder Name"
+                            />
+                            <div className="mt-1 text-[11px] text-gray-500">Datenbank wird durchsucht – Einfachauswahl.</div>
+                            <div className="mt-2 rounded-md border bg-gray-50 divide-y">
+                              {getPartnerOptions(interfaceSearchTerms.draft || '').map((opt) => (
+                                <button
+                                  key={opt.id}
+                                  type="button"
+                                  className="w-full text-left px-2 py-1 text-sm hover:bg-white"
+                                  onClick={() => selectInterfacePartner('draft', parseSystemToPartner(opt.id))}
+                                >
+                                  <div className="font-medium">{opt.shortName}</div>
+                                  <div className="text-xs text-gray-500">{opt.categories.basis.psi} · {opt.longName}</div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Richtung / Typ der Schnittstelle</label>
+                            <Select
+                              value={interfaceDraft.direction}
+                              onChange={(e) => updateInterfaceDraft('direction', e.target.value as InterfaceDirectionOption)}
+                            >
+                              <option value="Eingehend">Eingehend</option>
+                              <option value="Ausgehend">Ausgehend</option>
+                              <option value="Bidirektional">Bidirektional</option>
+                            </Select>
+                          </div>
+                          <div>
+                            <span className="block text-xs text-gray-500 mb-1">Personenbezogene Beschäftigtendaten - Frage A</span>
+                            <div className="flex gap-4 text-sm">
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name="personalDataDraft"
+                                  checked={interfaceDraft.personalData === true}
+                                  onChange={() => updateInterfaceDraft('personalData', true)}
+                                />
+                                <span>Ja</span>
+                              </label>
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name="personalDataDraft"
+                                  checked={interfaceDraft.personalData === false}
+                                  onChange={() => updateInterfaceDraft('personalData', false)}
+                                />
+                                <span>Nein</span>
+                              </label>
+                            </div>
+                          </div>
+                          {interfaceDraft.personalData === false && (
+                            <div>
+                              <span className="block text-xs text-gray-500 mb-1">
+                                Daten von Personengruppen kleiner 5 Personen - Frage B
+                              </span>
+                              <div className="flex gap-4 text-sm">
+                                <label className="inline-flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name="smallGroupDraft"
+                                    checked={interfaceDraft.smallGroupData === true}
+                                    onChange={() => updateInterfaceDraft('smallGroupData', true)}
+                                  />
+                                  <span>Ja</span>
+                                </label>
+                                <label className="inline-flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name="smallGroupDraft"
+                                    checked={interfaceDraft.smallGroupData === false}
+                                    onChange={() => updateInterfaceDraft('smallGroupData', false)}
+                                  />
+                                  <span>Nein</span>
+                                </label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {(interfaceDraft.personalData || interfaceDraft.smallGroupData) && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">
+                                Art der personenbezogenen Daten / Personengruppen
+                              </label>
+                              <RichTextarea
+                                value={interfaceDraft.dataDetails}
+                                onChange={(v) => updateInterfaceDraft('dataDetails', v)}
+                                rows={3}
+                                toolbar
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Zweckbestimmung</label>
+                              <RichTextarea
+                                value={interfaceDraft.purpose}
+                                onChange={(v) => updateInterfaceDraft('purpose', v)}
+                                rows={3}
+                                toolbar
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-xs text-gray-500 mb-1">Anhänge</label>
+                              <div className="flex flex-wrap gap-2 items-center text-sm">
+                                <Button variant="neutral" size="sm">
+                                  <Paperclip size={14} className="mr-1" /> Datei auswählen
+                                </Button>
+                                <span className="text-xs text-gray-500">(Upload-Demo, keine echten Daten gespeichert)</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border bg-gray-50 p-4 text-gray-400">Keine Berechtigung Schnittstellen zu bearbeiten.</div>
+                    )}
+
+                    <div className="space-y-3">
+                      {interfaces.length === 0 ? (
+                        <div className="rounded-xl border border-dashed bg-gray-50 p-6 text-center text-gray-500">
+                          Noch keine Schnittstellen erfasst.
+                        </div>
+                      ) : (
+                        interfaces.map((api) => {
+                          const searchTerm = interfaceSearchTerms[api.id] ?? (api.partner ? `${api.partner.psi} – ${api.partner.name}` : '');
+                          return (
+                            <div key={api.id} className="rounded-2xl border bg-white">
+                              <div
+                                className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 rounded-2xl"
+                                onClick={() => toggleInterfaceExpand(api.id)}
+                              >
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                                  <span className="inline-flex items-center text-xs px-2 py-1 rounded-full bg-gray-100 font-medium">
+                                    {api.number}
+                                  </span>
+                                  <span className="font-medium">{api.name}</span>
+                                  <span className="text-gray-500 text-sm">Typ: {api.type}</span>
+                                  <span className="text-gray-500 text-sm">Richtung: {api.direction}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {canEdit ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleInterfaceEdit(api.id);
+                                      }}
+                                    >
+                                      <Pencil size={16} />
+                                    </Button>
+                                  ) : (
+                                    <Button variant="ghost" size="icon" disabled title="Keine Berechtigung">
+                                      <Pencil size={16} />
+                                    </Button>
+                                  )}
+                                  {canEdit ? (
+                                    <Button
+                                      variant="danger"
+                                      size="icon"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeInterface(api.id);
+                                      }}
+                                    >
+                                      <Trash2 size={16} />
+                                    </Button>
+                                  ) : (
+                                    <Button variant="danger" size="icon" disabled title="Keine Berechtigung">
+                                      <Trash2 size={16} />
+                                    </Button>
+                                  )}
+                                  <Button variant="ghost" size="icon">
+                                    {api.expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {api.expanded && (
+                                <div className="px-4 pb-4 space-y-4">
+                                  {!api.editing ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 text-sm">
+                                      <div className="rounded-lg bg-gray-50 p-3">
+                                        <div className="text-xs text-gray-500">Schnittstellenpartner</div>
+                                        <div className="font-medium">
+                                          {api.partner ? `${api.partner.psi} – ${api.partner.name}` : '—'}
+                                        </div>
+                                      </div>
+                                      <div className="rounded-lg bg-gray-50 p-3">
+                                        <div className="text-xs text-gray-500">Personenbezogene Daten</div>
+                                        <div className="font-medium">
+                                          {api.personalData === null
+                                            ? 'Nicht bewertet'
+                                            : api.personalData
+                                              ? 'Ja'
+                                              : 'Nein'}
+                                        </div>
+                                      </div>
+                                      <div className="rounded-lg bg-gray-50 p-3">
+                                        <div className="text-xs text-gray-500">Daten kleiner Gruppen</div>
+                                        <div className="font-medium">
+                                          {api.smallGroupData === null ? 'Nicht bewertet' : api.smallGroupData ? 'Ja' : 'Nein'}
+                                        </div>
+                                      </div>
+                                      {(api.personalData || api.smallGroupData) && (
+                                        <div className="md:col-span-2 xl:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                          <div>
+                                            <div className="text-xs text-gray-500 mb-1">Art der Daten</div>
+                                            <div className="rounded-lg bg-gray-50 p-3 whitespace-pre-wrap">
+                                              {api.dataDetails || 'Keine Angaben'}
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <div className="text-xs text-gray-500 mb-1">Zweckbestimmung</div>
+                                            <div className="rounded-lg bg-gray-50 p-3 whitespace-pre-wrap">
+                                              {api.purpose || 'Keine Angaben'}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-4">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                                        <div>
+                                          <label className="block text-xs text-gray-500 mb-1">Nummer</label>
+                                          <Input value={api.number} onChange={(e) => updateInterfaceField(api.id, 'number', e.target.value)} />
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs text-gray-500 mb-1">Bezeichnung</label>
+                                          <Input value={api.name} onChange={(e) => updateInterfaceField(api.id, 'name', e.target.value)} />
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs text-gray-500 mb-1">Typ</label>
+                                          <Select value={api.type} onChange={(e) => updateInterfaceField(api.id, 'type', e.target.value as InterfaceTypeOption)}>
+                                            <option value="Schnittstelle">Schnittstelle</option>
+                                            <option value="API">API</option>
+                                            <option value="Microservice">Microservice</option>
+                                            <option value="Manuell">Manuell</option>
+                                          </Select>
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs text-gray-500 mb-1">Schnittstellenpartner / System</label>
+                                          <Input
+                                            value={searchTerm}
+                                            onChange={(e) => handlePartnerSearchChange(api.id, e.target.value)}
+                                            placeholder="System-ID, PSI-Nr. oder Name"
+                                          />
+                                          <div className="mt-2 rounded-md border bg-gray-50 divide-y">
+                                            {getPartnerOptions(searchTerm).map((opt) => (
+                                              <button
+                                                key={opt.id}
+                                                type="button"
+                                                className="w-full text-left px-2 py-1 text-sm hover:bg-white"
+                                                onClick={() => selectInterfacePartner(api.id, parseSystemToPartner(opt.id))}
+                                              >
+                                                <div className="font-medium">{opt.shortName}</div>
+                                                <div className="text-xs text-gray-500">{opt.categories.basis.psi} · {opt.longName}</div>
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs text-gray-500 mb-1">Richtung / Typ der Schnittstelle</label>
+                                          <Select value={api.direction} onChange={(e) => updateInterfaceField(api.id, 'direction', e.target.value as InterfaceDirectionOption)}>
+                                            <option value="Eingehend">Eingehend</option>
+                                            <option value="Ausgehend">Ausgehend</option>
+                                            <option value="Bidirektional">Bidirektional</option>
+                                          </Select>
+                                        </div>
+                                        <div>
+                                          <span className="block text-xs text-gray-500 mb-1">Personenbezogene Beschäftigtendaten - Frage A</span>
+                                          <div className="flex gap-4 text-sm">
+                                            <label className="inline-flex items-center gap-2">
+                                              <input
+                                                type="radio"
+                                                name={`personalData-${api.id}`}
+                                                checked={api.personalData === true}
+                                                onChange={() => updateInterfaceField(api.id, 'personalData', true)}
+                                              />
+                                              <span>Ja</span>
+                                            </label>
+                                            <label className="inline-flex items-center gap-2">
+                                              <input
+                                                type="radio"
+                                                name={`personalData-${api.id}`}
+                                                checked={api.personalData === false}
+                                                onChange={() => updateInterfaceField(api.id, 'personalData', false)}
+                                              />
+                                              <span>Nein</span>
+                                            </label>
+                                          </div>
+                                        </div>
+                                        {api.personalData === false && (
+                                          <div>
+                                            <span className="block text-xs text-gray-500 mb-1">Daten von Personengruppen kleiner 5 Personen - Frage B</span>
+                                            <div className="flex gap-4 text-sm">
+                                              <label className="inline-flex items-center gap-2">
+                                                <input
+                                                  type="radio"
+                                                  name={`smallGroup-${api.id}`}
+                                                  checked={api.smallGroupData === true}
+                                                  onChange={() => updateInterfaceField(api.id, 'smallGroupData', true)}
+                                                />
+                                                <span>Ja</span>
+                                              </label>
+                                              <label className="inline-flex items-center gap-2">
+                                                <input
+                                                  type="radio"
+                                                  name={`smallGroup-${api.id}`}
+                                                  checked={api.smallGroupData === false}
+                                                  onChange={() => updateInterfaceField(api.id, 'smallGroupData', false)}
+                                                />
+                                                <span>Nein</span>
+                                              </label>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {(api.personalData || api.smallGroupData) && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                          <div>
+                                            <label className="block text-xs text-gray-500 mb-1">Art der personenbezogenen Daten / Personengruppen</label>
+                                            <RichTextarea value={api.dataDetails} onChange={(v) => updateInterfaceField(api.id, 'dataDetails', v)} rows={3} toolbar />
+                                          </div>
+                                          <div>
+                                            <label className="block text-xs text-gray-500 mb-1">Zweckbestimmung</label>
+                                            <RichTextarea value={api.purpose} onChange={(v) => updateInterfaceField(api.id, 'purpose', v)} rows={3} toolbar />
+                                          </div>
+                                          <div className="md:col-span-2">
+                                            <label className="block text-xs text-gray-500 mb-1">Anhänge</label>
+                                            <div className="flex flex-wrap gap-2 items-center text-sm">
+                                              <Button variant="neutral" size="sm">
+                                                <Paperclip size={14} className="mr-1" /> Datei auswählen
+                                              </Button>
+                                              <span className="text-xs text-gray-500">(Upload-Demo, keine echten Daten gespeichert)</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      <div className="flex justify-end gap-2">
+                                        <Button variant="neutral" onClick={() => toggleInterfaceEdit(api.id)}>Abbrechen</Button>
+                                        <Button onClick={() => toggleInterfaceEdit(api.id)}>Speichern</Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <div className="rounded-lg border bg-amber-50 p-4 text-sm">
+                      <div className="font-medium">Import-Funktion für CSV</div>
+                      <p className="text-xs text-amber-800 mt-1">
+                        Beim Hochladen werden nur Änderungen übernommen; unveränderte Inhalte bleiben bestehen.
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <input type="file" accept=".csv" className="text-sm" disabled={!canEdit} />
+                        <Button size="sm" variant="secondary" disabled={!canEdit}>
+                          <Upload size={16} className="mr-1" /> CSV abgleichen
+                        </Button>
+                        {!canEdit && <span className="text-xs text-gray-500">Keine Bearbeitungsrechte</span>}
+                      </div>
                     </div>
                   </div>
                 ) : activeKey === "basis" ? (
