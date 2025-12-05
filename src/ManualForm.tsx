@@ -59,6 +59,60 @@ const STAGES = [
   "Freigabe"
 ];
 
+const SECTION_BANNER_CONTENT: Record<NavKey, { kicker: string; title: string; description: string }> = {
+  basis: {
+    kicker: "Basisinformationen",
+    title: "Stammdaten und Kontext",
+    description: "Erfassen Sie Kennungen, Status und Matrixangaben als Fundament für die Dokumentation.",
+  },
+  system: {
+    kicker: "Systembeschreibung",
+    title: "Enthält eine ausführliche Beschreibung des Systems",
+    description: "Ergänzen Sie strukturierte Inhalte zu Funktionsumfang, Anwendungsfällen und unterstützenden Unterlagen.",
+  },
+  apis: {
+    kicker: "Schnittstellen",
+    title: "Anbindungen und Datenaustausch dokumentieren",
+    description: "Listen Sie geplante und bestehende Schnittstellen inkl. Partnern, Richtung und Datenarten.",
+  },
+  roles: {
+    kicker: "Rollen / Berechtigungen",
+    title: "Rollen, Aufgaben und IT-Berechtigungen steuern",
+    description: "Pflegen Sie Verantwortlichkeiten, Aufgaben und benötigte Sichten für das System.",
+  },
+  reports: {
+    kicker: "Reports / Auswertungen / Anzeigen",
+    title: "Transparenz über verfügbare Auswertungen schaffen",
+    description: "Dokumentieren Sie Datenfelder, Datenschutzfragen und bereitgestellte Ausgabeformate.",
+  },
+  privacy: {
+    kicker: "Datenschutz / Compliance",
+    title: "Compliance und Schutzmaßnahmen nachvollziehbar halten",
+    description: "Bewerten Sie Datenschutzaspekte, Vereinbarungen und Berechtigungen auf einen Blick.",
+  },
+  ai: {
+    kicker: "Künstliche Intelligenz",
+    title: "KI-Einsatz und Bewertungen festhalten",
+    description: "Beschreiben Sie Modelle, Trainingsdaten, Risiken und Governance-Prozesse.",
+  },
+};
+
+function SectionBanner({ section, label }: { section: NavKey; label: string }) {
+  const content = SECTION_BANNER_CONTENT[section] || {
+    kicker: label,
+    title: label,
+    description: "Aktueller Arbeitsbereich",
+  };
+
+  return (
+    <div className="rounded-2xl border bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 text-white p-6 shadow-sm">
+      <p className="text-sm font-semibold">{content.kicker}</p>
+      <h3 className="text-xl font-semibold mt-1">{content.title}</h3>
+      <p className="mt-2 text-sm text-blue-50 max-w-3xl">{content.description}</p>
+    </div>
+  );
+}
+
 // -------------------- Rollen (Badges) --------------------
 // Typen für Rollen
  type Role = {
@@ -97,6 +151,28 @@ type InterfaceEntry = {
   attachments: string[];
   expanded?: boolean;
   editing?: boolean;
+};
+
+type ReportFormatOption = 'Dashboard' | 'Report' | 'Dateiexport';
+
+type ReportEntry = {
+  number: string;
+  name: string;
+  personalData: boolean | null;
+  smallGroupData: boolean | null;
+  dataTypes: string;
+  additionalCategories: string;
+  outputFormat: ReportFormatOption;
+  exportable: boolean;
+  description: string;
+  purpose: string;
+  roles: string;
+  turnus: string;
+  endDate: string;
+  pilot: boolean | null;
+  pilotStart: string;
+  pilotEnd: string;
+  goLive: string;
 };
 
 // Initialdaten basierend auf deiner Vorgabe
@@ -354,6 +430,27 @@ export default function ManualForm({ system }: ManualFormProps) {
       useCases: existing?.useCases || '',
       attachments: existing?.attachments || [],
     };
+  });
+  const [reportEntry, setReportEntry] = useState<ReportEntry>({
+    number: 'R-01',
+    name: 'Übersicht Ambitionen & Standortpräferenzen',
+    personalData: true,
+    smallGroupData: null,
+    dataTypes: 'Name, E-Mail, CID, Teamzugehörigkeit, Ambitions-IDs, Kurszuordnungen',
+    additionalCategories: 'Ambitionsscores, Standort-Präferenzen, bevorzugte Lernpfade',
+    outputFormat: 'Dashboard',
+    exportable: true,
+    description:
+      'Übersicht der Entwicklungsambitionen in Bezug auf Skills und Skillprofile sowie der Arbeitsstandort-Präferenzen. Es werden Ambitionen sowie passende Kurse zu den vorhandenen Ambitionen vorgeschlagen.',
+    purpose:
+      'Erfassung der Entwicklungsambitionen und Arbeitsstandort-Präferenzen; Individualisierung der Entwicklungsvorschläge',
+    roles: 'BR, F.SysV, HR',
+    turnus: 'einmalig, bei Bedarf, Anzeige im System, monatlich',
+    endDate: '',
+    pilot: true,
+    pilotStart: '2024-08-01',
+    pilotEnd: '2024-12-31',
+    goLive: '2025-03-01',
   });
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -782,6 +879,13 @@ export default function ManualForm({ system }: ManualFormProps) {
     return true;
   };
 
+  const roleOptions = useMemo(() => {
+    const mapped = roles
+      .map((r) => r.systemName || r.shopName || r.userName || r.number)
+      .filter((v): v is string => Boolean(v));
+    return mapped.length ? mapped : ['BR', 'F.SysV', 'HR'];
+  }, [roles]);
+
   const unreadBySection = useMemo(() => {
     const map: Record<string, number> = {};
     NAV_ITEMS.forEach((n) => {
@@ -1093,6 +1197,9 @@ export default function ManualForm({ system }: ManualFormProps) {
 
   const updateSystemDescription = <K extends keyof SystemDescription>(field: K, value: SystemDescription[K]) =>
     setSystemDescription((prev) => ({ ...prev, [field]: value }));
+
+  const updateReportField = <K extends keyof ReportEntry>(field: K, value: ReportEntry[K]) =>
+    setReportEntry((prev) => ({ ...prev, [field]: value }));
 
   const handleAttachmentUpload = (files: FileList | null) => {
     if (!files || !canEdit) return;
@@ -1418,8 +1525,8 @@ export default function ManualForm({ system }: ManualFormProps) {
         <div className="col-span-1 lg:col-span-4 min-w-0 overflow-x-auto">
           <Card>
             <CardContent className="p-6 space-y-6">
-              <div>
-                <h2 className="font-semibold mb-3">{activeItem.label}</h2>
+              <div className="space-y-4">
+                <SectionBanner section={activeKey} label={activeItem.label} />
 
                 {activeKey === "roles" ? (
                   <div className="space-y-4">
@@ -1606,14 +1713,6 @@ export default function ManualForm({ system }: ManualFormProps) {
                   </div>
                 ) : activeKey === "system" ? (
                   <div className="space-y-6">
-                    <div className="rounded-2xl border bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 text-white p-6 shadow-sm">
-                      <p className="text-sm font-semibold">Systembeschreibung</p>
-                      <h3 className="text-xl font-semibold mt-1">Enthält eine ausführliche Beschreibung des System</h3>
-                      <p className="mt-2 text-sm text-blue-50 max-w-3xl">
-                        Ergänzen Sie strukturierte Inhalte zu Funktionsumfang, Anwendungsfällen und unterstützenden Unterlagen.
-                      </p>
-                    </div>
-
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div className="space-y-3">
                         <div className="flex items-start justify-between gap-3">
@@ -1727,6 +1826,250 @@ export default function ManualForm({ system }: ManualFormProps) {
                       )}
                     </div>
                   </div>
+                ) : activeKey === "reports" ? (
+                  <fieldset disabled={!canEdit} className="space-y-6">
+                    <div className="rounded-xl border bg-white p-4 shadow-sm space-y-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold">enthaltene DF nach Gruppen mit Beispielen</p>
+                          <p className="text-xs text-gray-500">Auswertung</p>
+                        </div>
+                        <span className="rounded-full bg-indigo-50 text-indigo-700 text-xs px-3 py-1 font-medium">Auswertung</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Nummer</label>
+                          <Input
+                            value={reportEntry.number}
+                            onChange={(e) => updateReportField('number', e.target.value)}
+                            placeholder="z.B. R-01"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Bezeichnung</label>
+                          <Input
+                            value={reportEntry.name}
+                            onChange={(e) => updateReportField('name', e.target.value)}
+                            placeholder="Name der Auswertung"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-xs text-gray-500">Personenbezogene Beschäftigtendaten enthalten - Frage A</div>
+                        <div className="flex gap-4 text-sm">
+                          <label className="inline-flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="report-personal-data"
+                              checked={reportEntry.personalData === true}
+                              onChange={() => updateReportField('personalData', true)}
+                            />
+                            <span>Ja</span>
+                          </label>
+                          <label className="inline-flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="report-personal-data"
+                              checked={reportEntry.personalData === false}
+                              onChange={() => updateReportField('personalData', false)}
+                            />
+                            <span>Nein</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {reportEntry.personalData === false && (
+                        <div className="space-y-2">
+                          <div className="text-xs text-gray-500">
+                            Auswertungen auf Personengruppen (z.B. Teams, Projekte) kleiner 5 Personen - Frage B
+                          </div>
+                          <div className="flex gap-4 text-sm">
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="report-small-group"
+                                checked={reportEntry.smallGroupData === true}
+                                onChange={() => updateReportField('smallGroupData', true)}
+                              />
+                              <span>Ja</span>
+                            </label>
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="report-small-group"
+                                checked={reportEntry.smallGroupData === false}
+                                onChange={() => updateReportField('smallGroupData', false)}
+                              />
+                              <span>Nein</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+
+                      {(reportEntry.personalData || reportEntry.smallGroupData) && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">
+                              Art der personenbezogenen Beschäftigtendaten oder Personengruppen (Name, E-Mail, CID, Auftrags-/Ticketnr., Team, etc.)
+                            </label>
+                            <RichTextarea
+                              value={reportEntry.dataTypes}
+                              onChange={(v) => updateReportField('dataTypes', v)}
+                              rows={3}
+                              toolbar
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Weitere Datenkategorien</label>
+                            <RichTextarea
+                              value={reportEntry.additionalCategories}
+                              onChange={(v) => updateReportField('additionalCategories', v)}
+                              rows={3}
+                              toolbar
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Ausgabeformat</label>
+                          <Select
+                            value={reportEntry.outputFormat}
+                            onChange={(e) => updateReportField('outputFormat', e.target.value as ReportFormatOption)}
+                          >
+                            <option value="Dashboard">Dashboard</option>
+                            <option value="Report">Report</option>
+                            <option value="Dateiexport">Dateiexport</option>
+                          </Select>
+                        </div>
+                        {['Dashboard', 'Report'].includes(reportEntry.outputFormat) && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-500">Zusätzlich exportierbar</span>
+                            <label className="inline-flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={reportEntry.exportable}
+                                onChange={(e) => updateReportField('exportable', e.target.checked)}
+                              />
+                              <span>Ja</span>
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border bg-white p-4 shadow-sm space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Beschreibung</label>
+                          <RichTextarea
+                            value={reportEntry.description}
+                            onChange={(v) => updateReportField('description', v)}
+                            rows={4}
+                            toolbar
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Zweckbestimmung (auch für zusätzlichen Export/Download)</label>
+                          <RichTextarea
+                            value={reportEntry.purpose}
+                            onChange={(v) => updateReportField('purpose', v)}
+                            rows={4}
+                            toolbar
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border bg-white p-4 shadow-sm space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Berechtigte / Rollen</label>
+                          <Select value={reportEntry.roles} onChange={(e) => updateReportField('roles', e.target.value)}>
+                            {roleOptions.map((r) => (
+                              <option key={r} value={r}>{r}</option>
+                            ))}
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Turnus</label>
+                          <RichTextarea
+                            value={reportEntry.turnus}
+                            onChange={(v) => updateReportField('turnus', v)}
+                            rows={2}
+                            toolbar
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Befristet bis</label>
+                          <Input
+                            type="date"
+                            value={reportEntry.endDate}
+                            onChange={(e) => updateReportField('endDate', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="text-xs text-gray-500">Pilotierung</div>
+                          <div className="flex gap-4 text-sm">
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="report-pilot"
+                                checked={reportEntry.pilot === true}
+                                onChange={() => updateReportField('pilot', true)}
+                              />
+                              <span>Ja</span>
+                            </label>
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="report-pilot"
+                                checked={reportEntry.pilot === false}
+                                onChange={() => updateReportField('pilot', false)}
+                              />
+                              <span>Nein</span>
+                            </label>
+                          </div>
+                        </div>
+                        {reportEntry.pilot === false && (
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Geplante Wirkbetriebsaufnahme (WBA)</label>
+                            <Input
+                              type="date"
+                              value={reportEntry.goLive}
+                              onChange={(e) => updateReportField('goLive', e.target.value)}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {reportEntry.pilot === true && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Beginn der Pilotierung</label>
+                            <Input
+                              type="date"
+                              value={reportEntry.pilotStart}
+                              onChange={(e) => updateReportField('pilotStart', e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Ende der Pilotierung</label>
+                            <Input
+                              type="date"
+                              value={reportEntry.pilotEnd}
+                              onChange={(e) => updateReportField('pilotEnd', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </fieldset>
                 ) : activeKey === "apis" ? (
                   <div className="space-y-4">
                     {canEdit ? (
