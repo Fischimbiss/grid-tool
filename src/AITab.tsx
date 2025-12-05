@@ -1,280 +1,331 @@
-import React from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { aiSchema, AiFormData } from './schema';
-import { Input } from './components/ui/input';
-import { Checkbox } from './components/ui/checkbox';
-import { Textarea } from './components/ui/textarea';
-import { RichTextarea } from './components/ui/rich-textarea';
-import { Button } from './components/ui/button';
-import { useTranslation } from 'react-i18next';
-import { Select } from './components/ui/select';
-import CollapsibleCard from './components/ui/collapsible-card';
-import PurposeSection from './ai-tab/PurposeSection';
-import DataSection from './ai-tab/DataSection';
+import React, { useEffect } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { AiFormData, aiSchema } from './schema'
+import { Card, CardContent } from './components/ui/card'
+import { RichTextarea } from './components/ui/rich-textarea'
+import { Checkbox } from './components/ui/checkbox'
+import { Input } from './components/ui/input'
+import { Button } from './components/ui/button'
 
 interface Props {
-  lastSnapshot?: Partial<AiFormData>;
-  onCreateCR?: (tasks: string[]) => void;
-  canEdit?: boolean;
+  lastSnapshot?: Partial<AiFormData>
+  onCreateCR?: (tasks: string[]) => void
+  canEdit?: boolean
 }
 
-const corpRank = { low: 0, medium: 1, high: 2 } as const;
-const autoRank = { advice: 0, partial: 1, autonomous: 2 } as const;
+const defaultValues: AiFormData = {
+  description: '',
+  processImpact: '',
+  employeeDataProcessed: false,
+  employeeDataDetails: '',
+  modelDescription: '',
+  autonomyAssessment: '',
+  corporateRisk: 'low',
+  corporateRiskJustification: '',
+  aiActRisk: 'low',
+  worksCouncilInformed: false,
+  worksCouncilFile: undefined,
+  reminderDaysBeforeWba: 30,
+}
+
+const riskOptions = [
+  { value: 'low', label: 'niedriges Risiko' },
+  { value: 'medium', label: 'mittleres Risiko' },
+  { value: 'high', label: 'hohes Risiko' },
+]
 
 export const AITab: React.FC<Props> = ({ lastSnapshot, onCreateCR, canEdit = true }) => {
-  const { t } = useTranslation();
-  const form = useForm<AiFormData>({
-    resolver: zodResolver(aiSchema),
-    defaultValues: {
-      ai_present: true,
-      purpose: '',
-      process_impact: '',
-      employee_interaction: false,
-      personal_data_used: false,
-      personal_data_categories: [],
-      retention: '',
-      interfaces: [{ source: '', target: '', via_middleware: false }],
-      model: { type: '', version: '', provider: '', deployment: 'onprem', region: '', adaptation: 'prompting' },
-      autonomy: 'advice',
-      hitl: { required: false, thresholds: '' },
-      permission_dimensions: '',
-      transparency_notice: { required: false, notice_text: '', other_marking: '' },
-      risk: { eu_ai_act: 'minimal', corp_class: 'low', justification: '' },
-      dea: { completed: false, date: '', file: undefined },
-      monitoring: { metrics: [], eval_cadence: '' },
-    },
-  });
+  const form = useForm<AiFormData>({ resolver: zodResolver(aiSchema), defaultValues })
+  const { control, handleSubmit, watch, register, reset, formState } = form
+  const employeeDataProcessed = watch('employeeDataProcessed')
+  const worksCouncilInformed = watch('worksCouncilInformed')
 
-  const aiPresent = form.watch('ai_present');
-  const corpClass = form.watch('risk.corp_class');
-  const personalData = form.watch('personal_data_used');
+  useEffect(() => {
+    if (lastSnapshot) {
+      reset({ ...defaultValues, ...lastSnapshot })
+    }
+  }, [lastSnapshot, reset])
 
   const onSubmit = (data: AiFormData) => {
-    if (onCreateCR && lastSnapshot) {
-      const tasks: string[] = [];
-      if (JSON.stringify(data.model) !== JSON.stringify(lastSnapshot.model)) tasks.push('model change');
-      const dataObj = {
-        personal_data_used: data.personal_data_used,
-        personal_data_categories: data.personal_data_categories,
-        interfaces: data.interfaces,
-        retention: data.retention,
-      };
-      const lastDataObj = {
-        personal_data_used: lastSnapshot.personal_data_used,
-        personal_data_categories: lastSnapshot.personal_data_categories,
-        interfaces: lastSnapshot.interfaces,
-        retention: lastSnapshot.retention,
-      };
-      if (JSON.stringify(dataObj) !== JSON.stringify(lastDataObj)) tasks.push('data change');
-      if (lastSnapshot.autonomy && autoRank[data.autonomy] > autoRank[lastSnapshot.autonomy]) tasks.push('autonomy upgrade');
-      if (lastSnapshot.risk?.corp_class && corpRank[data.risk.corp_class] > corpRank[lastSnapshot.risk.corp_class]) tasks.push('risk jump');
-      if (!lastSnapshot.employee_interaction && data.employee_interaction) tasks.push('new employee_interaction');
-      onCreateCR(tasks);
-    }
-  };
+    onCreateCR?.([])
+    // Form submission is currently a client-side interaction only.
+    console.debug('AI tab saved', data)
+  }
+
+  const errorMessage = (path: keyof typeof formState.errors) => {
+    const message = formState.errors[path]?.message as string | undefined
+    return message ? <p className="text-sm text-red-600">{message}</p> : null
+  }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      <fieldset disabled={!canEdit} className="space-y-4">
-      <CollapsibleCard title={`A: ${t("aiTab.aiPresent.label")}`}>
-        <p>{t("aiTab.aiPresent.description")}</p>
-        <label className="flex items-center gap-2">
-          <Checkbox {...form.register('ai_present')} /> {t("aiTab.aiPresent.checkbox")}
-        </label>
-      </CollapsibleCard>
-      {!aiPresent && (
-        <CollapsibleCard title={t("aiTab.processImpact.label")}>
-          <Textarea maxLength={600} {...form.register('process_impact')} />
-        </CollapsibleCard>
-      )}
-      {aiPresent && (
-        <>
-            <PurposeSection form={form} />
-            <DataSection form={form} personalData={personalData} />
-
-          <CollapsibleCard title={`D: ${t("aiTab.model.label")}`}>
-            <p>{t("aiTab.model.description")}</p>
-            <label>{t("aiTab.model.type.label")}</label>
-            <Input
-              placeholder={t("aiTab.model.type.placeholder")}
-              {...form.register('model.type')}
-            />
-            <label>{t("aiTab.model.version.label")}</label>
-            <Input
-              placeholder={t("aiTab.model.version.placeholder")}
-              {...form.register('model.version')}
-            />
-            <label>{t("aiTab.model.provider.label")}</label>
-            <Input
-              placeholder={t("aiTab.model.provider.placeholder")}
-              {...form.register('model.provider')}
-            />
-            <label>{t("aiTab.model.deployment.label")}</label>
-            <Select {...form.register('model.deployment')}>
-              <option value="onprem">{t("aiTab.model.deployment.onprem")}</option>
-              <option value="saas">{t("aiTab.model.deployment.saas")}</option>
-              <option value="cloud">{t("aiTab.model.deployment.cloud")}</option>
-            </Select>
-            <label>{t("aiTab.model.region.label")}</label>
-            <Input
-              placeholder={t("aiTab.model.region.placeholder")}
-              {...form.register('model.region')}
-            />
-            <label>{t("aiTab.model.adaptation.label")}</label>
-            <Select {...form.register('model.adaptation')}>
-              <option value="prompting">{t("aiTab.model.adaptation.prompting")}</option>
-              <option value="finetune">{t("aiTab.model.adaptation.finetune")}</option>
-              <option value="rag">{t("aiTab.model.adaptation.rag")}</option>
-              <option value="other">{t("aiTab.model.adaptation.other")}</option>
-            </Select>
-          </CollapsibleCard>
-
-          <CollapsibleCard title={`E: ${t("aiTab.autonomy.label")}`}>
-            <p>{t("aiTab.autonomy.description")}</p>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <fieldset disabled={!canEdit} className="space-y-6">
+        <Card>
+          <CardContent className="space-y-6">
             <div className="space-y-1">
-              <label className="flex items-center gap-1">
-                <input type="radio" value="advice" {...form.register('autonomy')} /> {t("aiTab.autonomy.options.advice")}
-              </label>
-              <label className="flex items-center gap-1">
-                <input type="radio" value="partial" {...form.register('autonomy')} /> {t("aiTab.autonomy.options.partial")}
-              </label>
-              <label className="flex items-center gap-1">
-                <input type="radio" value="autonomous" {...form.register('autonomy')} /> {t("aiTab.autonomy.options.autonomous")}
-              </label>
+              <h2 className="text-xl font-semibold">KI</h2>
+              <p className="text-sm text-neutral-600">Enthaltene Datenfelder</p>
             </div>
-            <label className="flex items-center gap-2">
-              <Checkbox {...form.register('hitl.required')} /> {t("aiTab.hitlRequired.label")}
-            </label>
-            <div className="space-y-2 pl-4">
-              <label>{t("aiTab.hitl.thresholds.label")}</label>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="font-medium" htmlFor="description">
+                  Beschreibung
+                </label>
+                <Controller
+                  name="description"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextarea
+                      id="description"
+                      toolbar
+                      placeholder="Was macht diese KI?"
+                      disabled={!canEdit}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+                {errorMessage('description')}
+              </div>
+
+              <div className="space-y-2">
+                <label className="font-medium" htmlFor="processImpact">
+                  Auswirkungen auf die Prozesse
+                </label>
+                <Controller
+                  name="processImpact"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextarea
+                      id="processImpact"
+                      toolbar
+                      placeholder="Wie verändern sich Abläufe und Zuständigkeiten?"
+                      disabled={!canEdit}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+                {errorMessage('processImpact')}
+              </div>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-3">
+                <Controller
+                  name="employeeDataProcessed"
+                  control={control}
+                  render={({ field }) => (
+                    <label className="flex items-start gap-2 text-sm font-medium">
+                      <Checkbox
+                        id="employeeDataProcessed"
+                        checked={field.value}
+                        onCheckedChange={(checked) => field.onChange(!!checked)}
+                      />
+                      <span>Werden Beschäftigtendaten durch die KI verarbeitet?</span>
+                    </label>
+                  )}
+                />
+                {employeeDataProcessed && (
+                  <div className="space-y-2 pl-6">
+                    <label className="font-medium" htmlFor="employeeDataDetails">
+                      Wenn ja: Welche Beschäftigtendaten und zu welchem Zweck?
+                    </label>
+                    <Controller
+                      name="employeeDataDetails"
+                      control={control}
+                      render={({ field }) => (
+                        <RichTextarea
+                          id="employeeDataDetails"
+                          toolbar
+                          placeholder="Beschreibe die betroffenen Datenkategorien und Zwecke."
+                          disabled={!canEdit}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                    {errorMessage('employeeDataDetails')}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="font-medium" htmlFor="modelDescription">
+                  Modell der KI
+                </label>
+                <Controller
+                  name="modelDescription"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextarea
+                      id="modelDescription"
+                      toolbar
+                      placeholder="Beispiele: Sprachmodell - LLM, Bilderkennungsmodell, Generatives Modell ..."
+                      disabled={!canEdit}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+                <p className="text-xs text-neutral-600">
+                  Modellname oder Typ, z. B. Meta Llama 3.3 70b-instruct AWQ, Mistral Small 3 oder jina-embeddings-v2-base-de.
+                </p>
+                {errorMessage('modelDescription')}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-medium" htmlFor="autonomyAssessment">
+                In welchem Umfang kann die KI (teil)autonome Schlussfolgerungen ziehen?
+              </label>
+              <p className="text-sm text-neutral-600">
+                KI-Autonomie beschreibt, wie eigenständig ein System Aufgaben erledigt und Entscheidungen trifft – von regelbasierten
+                Programmen bis hin zu lernenden Agenten.
+              </p>
               <Controller
-                name="hitl.thresholds"
-                control={form.control}
+                name="autonomyAssessment"
+                control={control}
                 render={({ field }) => (
                   <RichTextarea
-                    placeholder={t("aiTab.hitl.thresholds.placeholder")}
+                    id="autonomyAssessment"
                     toolbar
+                    placeholder="Beschreibe den Grad der Autonomie und den Bedarf an menschlicher Aufsicht."
                     disabled={!canEdit}
-                    {...field}
+                    value={field.value}
+                    onChange={field.onChange}
                   />
                 )}
               />
-              <p className="text-sm text-neutral-600">{t("aiTab.hitl.thresholds.help")}</p>
-              <label>{t("aiTab.permissionDimensions.label")}</label>
-              <Controller
-                name="permission_dimensions"
-                control={form.control}
-                render={({ field }) => (
-                  <RichTextarea
-                    placeholder={t("aiTab.permissionDimensions.placeholder")}
-                    toolbar
-                    disabled={!canEdit}
-                    {...field}
-                  />
-                )}
-              />
-              <p className="text-sm text-neutral-600">{t("aiTab.permissionDimensions.help")}</p>
+              {errorMessage('autonomyAssessment')}
             </div>
-          </CollapsibleCard>
 
-          <CollapsibleCard title={`F: ${t("aiTab.transparency.label")}`}>
-            <p>{t("aiTab.transparency.description")}</p>
-            <label className="flex items-center gap-2">
-              <Checkbox {...form.register('transparency_notice.required')} /> {t("aiTab.transparencyNotice.label")}
-            </label>
-            <label>{t("aiTab.transparencyNotice.noticeText.label")}</label>
-            <Controller
-              name="transparency_notice.notice_text"
-              control={form.control}
-              render={({ field }) => (
-                <RichTextarea
-                  placeholder={t("aiTab.transparencyNotice.noticeText.placeholder")}
-                  toolbar
-                  disabled={!canEdit}
-                  {...field}
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-medium">Betriebliche Risikoklassifizierung</label>
+                  <span className="text-xs text-neutral-600">(Anlage 3 KBV IT Systeme)</span>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  {riskOptions.map((option) => (
+                    <label key={option.value} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        value={option.value}
+                        className="h-4 w-4"
+                        {...register('corporateRisk')}
+                        disabled={!canEdit}
+                      />
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
+                {errorMessage('corporateRisk')}
+
+                <label className="font-medium" htmlFor="corporateRiskJustification">
+                  Begründung
+                </label>
+                <Controller
+                  name="corporateRiskJustification"
+                  control={control}
+                  render={({ field }) => (
+                    <RichTextarea
+                      id="corporateRiskJustification"
+                      toolbar
+                      placeholder="Warum wird diese Einstufung vorgenommen?"
+                      disabled={!canEdit}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
                 />
-              )}
-            />
-            <label>{t("aiTab.transparencyNotice.otherMarking.label")}</label>
-            <Controller
-              name="transparency_notice.other_marking"
-              control={form.control}
-              render={({ field }) => (
-                <RichTextarea
-                  placeholder={t("aiTab.transparencyNotice.otherMarking.placeholder")}
-                  toolbar
-                  disabled={!canEdit}
-                  {...field}
-                />
-              )}
-            />
-          </CollapsibleCard>
+                {errorMessage('corporateRiskJustification')}
+              </div>
 
-          <CollapsibleCard title={`G: ${t("aiTab.risk.label")}`}>
-            <p>{t("aiTab.risk.description")}</p>
-            <label>{t("aiTab.risk.eu_ai_act.label")}</label>
-            <Select {...form.register('risk.eu_ai_act')}>
-              <option value="minimal">{t("aiTab.risk.eu_ai_act.minimal")}</option>
-              <option value="limited">{t("aiTab.risk.eu_ai_act.limited")}</option>
-              <option value="high">{t("aiTab.risk.eu_ai_act.high")}</option>
-              <option value="prohibited">{t("aiTab.risk.eu_ai_act.prohibited")}</option>
-            </Select>
-            <label>{t("aiTab.risk.corp_class.label")}</label>
-            <Select {...form.register('risk.corp_class')}>
-              <option value="low">{t("aiTab.risk.corp_class.low")}</option>
-              <option value="medium">{t("aiTab.risk.corp_class.medium")}</option>
-              <option value="high">{t("aiTab.risk.corp_class.high")}</option>
-            </Select>
-            <label>{t("aiTab.risk.justification.label")}</label>
-            <Controller
-              name="risk.justification"
-              control={form.control}
-              render={({ field }) => (
-                <RichTextarea
-                  placeholder={t("aiTab.risk.justification.placeholder")}
-                  toolbar
-                  disabled={!canEdit}
-                  {...field}
-                />
-              )}
-            />
-          </CollapsibleCard>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-medium">Risikoklassifizierung der KI-Verordnung</label>
+                  <span className="text-xs text-neutral-600">(Ergebnis aus dem DEA-Verfahren)</span>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  {riskOptions.map((option) => (
+                    <label key={option.value} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        value={option.value}
+                        className="h-4 w-4"
+                        {...register('aiActRisk')}
+                        disabled={!canEdit}
+                      />
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
+                {errorMessage('aiActRisk')}
 
-          <CollapsibleCard title={`H: ${t("aiTab.dea.label")}`}>
-            <p>{t("aiTab.dea.description")}</p>
-            <label className="flex items-center gap-2">
-              <Checkbox {...form.register('dea.completed')} /> {t("aiTab.deaCompleted.label")}
-            </label>
-            <label>{t("aiTab.dea.date.label")}</label>
-            <Input
-              placeholder={t("aiTab.dea.date.placeholder")}
-              {...form.register('dea.date')}
-            />
-            <label>{t("aiTab.dea.file.label")}</label>
-            <Input type="file" {...form.register('dea.file')} />
-          </CollapsibleCard>
+                <div className="space-y-3 pt-2">
+                  <Controller
+                    name="worksCouncilInformed"
+                    control={control}
+                    render={({ field }) => (
+                      <label className="flex items-start gap-2 text-sm font-medium">
+                        <Checkbox
+                          id="worksCouncilInformed"
+                          checked={field.value}
+                          onCheckedChange={(checked) => field.onChange(!!checked)}
+                        />
+                        <span>Wurde dem Betriebsrat das Ergebnis des DEA-Verfahrens zur Verfügung gestellt?</span>
+                      </label>
+                    )}
+                  />
 
-          <aside className="p-2 border">
-            <h3 className="font-semibold">Maßnahmenempfehlung</h3>
-            {corpClass === 'low' && <p>KBV-Standards anwenden</p>}
-            {corpClass === 'medium' && <p>KBV-Standards anwenden – Transparenzpflicht ggü. Beschäftigten</p>}
-            {corpClass === 'high' && (
-              <ul>
-                <li>KI-Expert:innenkreis beteiligen</li>
-                <li>Fairnessmetriken beschreiben</li>
-                <li>QA-Plan erstellen / vorlegen</li>
-                <li>Regelmäßige Evaluation</li>
-                <li>Menschliche Beteiligung sicherstellen (Human-in-the-Loop)</li>
-              </ul>
-            )}
-          </aside>
-        </>
-      )}
-      <Button type="submit">{t("aiTab.submit")}</Button>
+                  {worksCouncilInformed ? (
+                    <div className="space-y-2 pl-6">
+                      <label className="font-medium" htmlFor="worksCouncilFile">
+                        Wenn ja: Uploadmöglichkeit
+                      </label>
+                      <Controller
+                        name="worksCouncilFile"
+                        control={control}
+                        render={({ field }) => (
+                          <Input
+                            id="worksCouncilFile"
+                            type="file"
+                            disabled={!canEdit}
+                            onChange={(e) => field.onChange(e.target.files?.[0])}
+                          />
+                        )}
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-2 pl-6">
+                      <label className="font-medium" htmlFor="reminderDaysBeforeWba">
+                        Wenn nein: Automatische Erinnerung X Tage vor dem geplanten WBA
+                      </label>
+                      <Input
+                        id="reminderDaysBeforeWba"
+                        type="number"
+                        min={1}
+                        disabled={!canEdit}
+                        {...register('reminderDaysBeforeWba', { valueAsNumber: true })}
+                      />
+                      {errorMessage('reminderDaysBeforeWba')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end">
+          <Button type="submit">Speichern</Button>
+        </div>
       </fieldset>
     </form>
-  );
-};
+  )
+}
 
-export default AITab;
+export default AITab

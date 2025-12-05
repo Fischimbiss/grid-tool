@@ -1,96 +1,47 @@
-import { aiSchema } from './schema';
+import { aiSchema } from './schema'
 
 describe('aiSchema validation', () => {
-  it('requires transparency when employee interaction', () => {
-    const res = aiSchema.safeParse({
-      ai_present: true,
-      purpose: 'x',
-      process_impact: '',
-      employee_interaction: true,
-      personal_data_used: false,
-      model: { type: 't', version: '1', provider: 'p', deployment: 'onprem', region: 'r', adaptation: 'prompting' },
-      autonomy: 'advice',
-      hitl: { required: false },
-      transparency_notice: { required: false },
-      risk: { eu_ai_act: 'minimal', corp_class: 'low', justification: 'j' },
-      dea: { completed: true, date: '2024-01-01' },
-      monitoring: { metrics: ['accuracy'] },
-    });
-    expect(res.success).toBe(false);
-  });
+  const base = {
+    description: 'Test KI',
+    processImpact: 'Keine direkten Auswirkungen',
+    employeeDataProcessed: false,
+    employeeDataDetails: '',
+    modelDescription: 'Sprachmodell',
+    autonomyAssessment: 'Nur unterstützend',
+    corporateRisk: 'low' as const,
+    corporateRiskJustification: 'Geringe Tragweite',
+    aiActRisk: 'low' as const,
+    worksCouncilInformed: true,
+    worksCouncilFile: undefined,
+    reminderDaysBeforeWba: 10,
+  }
 
-  it('requires categories when personal data used', () => {
+  it('requires employee data details when processed', () => {
     const res = aiSchema.safeParse({
-      ai_present: true,
-      purpose: 'x',
-      process_impact: '',
-      employee_interaction: false,
-      personal_data_used: true,
-      retention: '',
-      interfaces: [],
-      model: { type: 't', version: '1', provider: 'p', deployment: 'onprem', region: 'r', adaptation: 'prompting' },
-      autonomy: 'advice',
-      hitl: { required: false },
-      transparency_notice: { required: false },
-      risk: { eu_ai_act: 'minimal', corp_class: 'low', justification: 'j' },
-      dea: { completed: true, date: '2024-01-01' },
-      monitoring: { metrics: ['accuracy'] },
-    });
-    expect(res.success).toBe(false);
-  });
+      ...base,
+      employeeDataProcessed: true,
+      employeeDataDetails: '',
+    })
+    expect(res.success).toBe(false)
+  })
 
-  it('high risk requires fairness metric and hitl', () => {
+  it('requires reminder when works council not informed', () => {
     const res = aiSchema.safeParse({
-      ai_present: true,
-      purpose: 'x',
-      process_impact: '',
-      employee_interaction: false,
-      personal_data_used: false,
-      model: { type: 't', version: '1', provider: 'p', deployment: 'onprem', region: 'r', adaptation: 'prompting' },
-      autonomy: 'advice',
-      hitl: { required: false },
-      transparency_notice: { required: false },
-      risk: { eu_ai_act: 'high', corp_class: 'high', justification: 'j' },
-      dea: { completed: true, date: '2024-01-01' },
-      monitoring: { metrics: ['accuracy'] },
-    });
-    expect(res.success).toBe(false);
-  });
+      ...base,
+      worksCouncilInformed: false,
+      reminderDaysBeforeWba: undefined,
+    })
+    expect(res.success).toBe(false)
+  })
 
-  it('requires dea completed', () => {
+  it('accepts a fully populated payload', () => {
     const res = aiSchema.safeParse({
-      ai_present: true,
-      purpose: 'x',
-      process_impact: '',
-      employee_interaction: false,
-      personal_data_used: false,
-      model: { type: 't', version: '1', provider: 'p', deployment: 'onprem', region: 'r', adaptation: 'prompting' },
-      autonomy: 'advice',
-      hitl: { required: false },
-      transparency_notice: { required: false },
-      risk: { eu_ai_act: 'minimal', corp_class: 'low', justification: 'j' },
-      dea: { completed: false, date: '2024-01-01' },
-      monitoring: { metrics: ['accuracy'] },
-    });
-    expect(res.success).toBe(false);
-  });
-
-  it('passes with high risk and requirements met', () => {
-    const res = aiSchema.safeParse({
-      ai_present: true,
-      purpose: 'x',
-      process_impact: '',
-      employee_interaction: false,
-      personal_data_used: false,
-      model: { type: 't', version: '1', provider: 'p', deployment: 'onprem', region: 'r', adaptation: 'prompting' },
-      autonomy: 'advice',
-      hitl: { required: true },
-      transparency_notice: { required: false },
-      risk: { eu_ai_act: 'high', corp_class: 'high', justification: 'j' },
-      dea: { completed: true, date: '2024-01-01' },
-      monitoring: { metrics: ['accuracy', 'fairness'], eval_cadence: 'm' },
-      permission_dimensions: 'role',
-    });
-    expect(res.success).toBe(true);
-  });
-});
+      ...base,
+      employeeDataProcessed: true,
+      employeeDataDetails: 'Mitarbeiter-IDs für Abgleich mit Rollenprofilen.',
+      worksCouncilInformed: false,
+      reminderDaysBeforeWba: 30,
+    })
+    expect(res.success).toBe(true)
+  })
+})
