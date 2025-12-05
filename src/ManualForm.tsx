@@ -99,6 +99,29 @@ type InterfaceEntry = {
   editing?: boolean;
 };
 
+type ReportOutputFormat = 'dashboard' | 'report' | 'export';
+
+type ReportEntry = {
+  id: number;
+  number: string;
+  title: string;
+  personalData: boolean | null;
+  smallGroupData: boolean | null;
+  dataDetails: string;
+  additionalCategories: string;
+  outputFormat: ReportOutputFormat;
+  exportable: boolean | null;
+  description: string;
+  purpose: string;
+  roleId: number | null;
+  cadence: string;
+  dueUntil: string;
+  pilot: boolean | null;
+  pilotStart: string;
+  pilotEnd: string;
+  goLive: string;
+};
+
 // Initialdaten basierend auf deiner Vorgabe
 
 // -------------------- Basisinformationen --------------------
@@ -312,6 +335,54 @@ export default function ManualForm({ system }: ManualFormProps) {
 
   const [interfaceDraft, setInterfaceDraft] = useState<Omit<InterfaceEntry, 'id' | 'expanded' | 'editing'>>(() => emptyInterfaceDraft());
   const [interfaceSearchTerms, setInterfaceSearchTerms] = useState<Record<string, string>>({ draft: '' });
+
+  // Reports / Auswertungen
+  const makeReport = (overrides: Partial<ReportEntry> = {}): ReportEntry => ({
+    id: Date.now(),
+    number: '',
+    title: '',
+    personalData: null,
+    smallGroupData: null,
+    dataDetails: '',
+    additionalCategories: '',
+    outputFormat: 'dashboard',
+    exportable: null,
+    description: '',
+    purpose: '',
+    roleId: roles[0]?.id ?? null,
+    cadence: '',
+    dueUntil: '',
+    pilot: null,
+    pilotStart: '',
+    pilotEnd: '',
+    goLive: '',
+    ...overrides,
+  });
+
+  const [reports, setReports] = useState<ReportEntry[]>(() => [
+    makeReport({
+      number: 'R-01',
+      title: 'Auswertung Entwicklungsambitionen',
+      personalData: false,
+      smallGroupData: true,
+      dataDetails: 'Teamzugehörigkeit, Standortpräferenzen, Skillprofile, Kursinteressen',
+      additionalCategories: 'Skill-Level, Zertifizierungen, Lernpräferenzen',
+      outputFormat: 'dashboard',
+      exportable: true,
+      description:
+        'Übersicht der Entwicklungsambitionen in Bezug auf Skills und Skillprofile sowie der Arbeitsstandort-Präferenzen. Es werden Ambitionen sowie passende Kurse zu den vorhandenen Ambitionen vorgeschlagen.',
+      purpose:
+        'Erfassung der Entwicklungsambitionen und Arbeitsstandort-Präferenzen; Individualisierung der Entwicklungsvorschläge',
+      cadence: 'einmalig, bei bedarf, anzeige im System, monatlich, ...',
+    }),
+  ]);
+
+  const updateReportField = <K extends keyof ReportEntry>(id: number, key: K, value: ReportEntry[K]) => {
+    setReports((prev) => prev.map((report) => (report.id === id ? { ...report, [key]: value } : report)));
+  };
+
+  const addReport = () => setReports((prev) => [...prev, makeReport()]);
+  const removeReport = (id: number) => setReports((prev) => prev.filter((report) => report.id !== id));
 
   // Basisinformationen State
   const [basis, setBasis] = useState<BasisInfo>(() => {
@@ -1556,6 +1627,324 @@ export default function ManualForm({ system }: ManualFormProps) {
                         </div>
                       ))}
                     </div>
+                  </div>
+                ) : activeKey === "reports" ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold">Reports / Auswertungen / Anzeigen</div>
+                      {canEdit ? (
+                        <Button size="sm" onClick={addReport}>
+                          <Plus className="mr-2" size={16} /> Neue Auswertung hinzufügen
+                        </Button>
+                      ) : (
+                        <Button size="sm" disabled>
+                          <Plus className="mr-2" size={16} /> Keine Berechtigung
+                        </Button>
+                      )}
+                    </div>
+
+                    {reports.map((report) => (
+                      <div key={report.id} className="rounded-xl border bg-white p-4 space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center text-xs px-2 py-1 rounded-full bg-gray-100 font-medium">
+                                {report.number || '—'}
+                              </span>
+                              <span className="font-semibold truncate">{report.title || 'Neue Auswertung'}</span>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Enthaltene DF nach Gruppen mit Beispielen
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => updateReportField(report.id, 'title', report.title || 'Auswertung')}
+                              className="hidden"
+                            >
+                              <Pencil size={16} />
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="icon"
+                              disabled={!canEdit}
+                              onClick={() => removeReport(report.id)}
+                              title="Auswertung entfernen"
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Nummer</label>
+                            <Input
+                              value={report.number}
+                              onChange={(e) => updateReportField(report.id, 'number', e.target.value)}
+                              placeholder="z.B. R-01"
+                              disabled={!canEdit}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Bezeichnung</label>
+                            <Input
+                              value={report.title}
+                              onChange={(e) => updateReportField(report.id, 'title', e.target.value)}
+                              placeholder="z.B. Standort- & Skill-Report"
+                              disabled={!canEdit}
+                            />
+                          </div>
+                          <div>
+                            <span className="block text-xs text-gray-500 mb-1">Personenbezogene Beschäftigtendaten enthalten - Frage A</span>
+                            <div className="flex gap-4 text-sm">
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name={`report-personal-${report.id}`}
+                                  checked={report.personalData === true}
+                                  onChange={() => {
+                                    updateReportField(report.id, 'personalData', true);
+                                    updateReportField(report.id, 'smallGroupData', null);
+                                  }}
+                                  disabled={!canEdit}
+                                />
+                                <span>Ja</span>
+                              </label>
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name={`report-personal-${report.id}`}
+                                  checked={report.personalData === false}
+                                  onChange={() => updateReportField(report.id, 'personalData', false)}
+                                  disabled={!canEdit}
+                                />
+                                <span>Nein</span>
+                              </label>
+                            </div>
+                          </div>
+
+                          {report.personalData === false && (
+                            <div>
+                              <span className="block text-xs text-gray-500 mb-1">Auswertungen auf Personengruppen (z.B. Teams, Projekte) kleiner 5 Personen - Frage B</span>
+                              <div className="flex gap-4 text-sm">
+                                <label className="inline-flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name={`report-small-group-${report.id}`}
+                                    checked={report.smallGroupData === true}
+                                    onChange={() => updateReportField(report.id, 'smallGroupData', true)}
+                                    disabled={!canEdit}
+                                  />
+                                  <span>Ja</span>
+                                </label>
+                                <label className="inline-flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name={`report-small-group-${report.id}`}
+                                    checked={report.smallGroupData === false}
+                                    onChange={() => updateReportField(report.id, 'smallGroupData', false)}
+                                    disabled={!canEdit}
+                                  />
+                                  <span>Nein</span>
+                                </label>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {(report.personalData || report.smallGroupData) && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Art der personenbezogenen Beschäftigtendaten oder Personengruppen (Name, E-Mail, CID, Auftrags-/Ticketnr., Team, etc.)</label>
+                              <RichTextarea
+                                value={report.dataDetails}
+                                onChange={(v) => updateReportField(report.id, 'dataDetails', v)}
+                                rows={3}
+                                toolbar
+                                disabled={!canEdit}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Weitere Datenkategorien</label>
+                              <RichTextarea
+                                value={report.additionalCategories}
+                                onChange={(v) => updateReportField(report.id, 'additionalCategories', v)}
+                                rows={3}
+                                toolbar
+                                disabled={!canEdit}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Ausgabeformat</label>
+                            <Select
+                              value={report.outputFormat}
+                              onChange={(e) => {
+                                const value = e.target.value as ReportOutputFormat;
+                                updateReportField(report.id, 'outputFormat', value);
+                                if (value === 'export') {
+                                  updateReportField(report.id, 'exportable', null);
+                                }
+                              }}
+                              disabled={!canEdit}
+                            >
+                              <option value="dashboard">Dashboard</option>
+                              <option value="report">Report</option>
+                              <option value="export">Dateiexport</option>
+                            </Select>
+                          </div>
+                          {['dashboard', 'report'].includes(report.outputFormat) && (
+                            <div className="flex items-center gap-2 pt-6">
+                              <Checkbox
+                                checked={report.exportable || false}
+                                onChange={(e) => updateReportField(report.id, 'exportable', e.target.checked)}
+                                disabled={!canEdit}
+                              />
+                              <span className="text-sm">Zusätzlich exportierbar</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Beschreibung</label>
+                            <RichTextarea
+                              value={report.description}
+                              onChange={(v) => updateReportField(report.id, 'description', v)}
+                              rows={4}
+                              toolbar
+                              disabled={!canEdit}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Zweckbestimmung (auch für zusätzlichen Export/Download)</label>
+                            <RichTextarea
+                              value={report.purpose}
+                              onChange={(v) => updateReportField(report.id, 'purpose', v)}
+                              rows={4}
+                              toolbar
+                              disabled={!canEdit}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Berechtigte / Rollen</label>
+                            <Select
+                              value={report.roleId ?? ''}
+                              onChange={(e) => updateReportField(report.id, 'roleId', e.target.value ? Number(e.target.value) : null)}
+                              disabled={!canEdit || roles.length === 0}
+                            >
+                              <option value="">Bitte auswählen</option>
+                              {roles.map((role) => (
+                                <option key={role.id} value={role.id}>
+                                  {role.number} – {role.systemName}
+                                </option>
+                              ))}
+                            </Select>
+                            {roles.length === 0 && (
+                              <p className="text-xs text-gray-500 mt-1">Keine Rollen hinterlegt.</p>
+                            )}
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-xs text-gray-500 mb-1">Turnus</label>
+                            <RichTextarea
+                              value={report.cadence}
+                              onChange={(v) => updateReportField(report.id, 'cadence', v)}
+                              rows={3}
+                              toolbar
+                              disabled={!canEdit}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Befristet bis</label>
+                            <Input
+                              type="date"
+                              value={report.dueUntil}
+                              onChange={(e) => updateReportField(report.id, 'dueUntil', e.target.value)}
+                              disabled={!canEdit}
+                            />
+                          </div>
+                          <div>
+                            <span className="block text-xs text-gray-500 mb-1">Pilotierung</span>
+                            <div className="flex gap-4 text-sm">
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name={`pilot-${report.id}`}
+                                  checked={report.pilot === true}
+                                  onChange={() => {
+                                    updateReportField(report.id, 'pilot', true);
+                                    updateReportField(report.id, 'goLive', '');
+                                  }}
+                                  disabled={!canEdit}
+                                />
+                                <span>Ja</span>
+                              </label>
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name={`pilot-${report.id}`}
+                                  checked={report.pilot === false}
+                                  onChange={() => {
+                                    updateReportField(report.id, 'pilot', false);
+                                    updateReportField(report.id, 'pilotStart', '');
+                                    updateReportField(report.id, 'pilotEnd', '');
+                                  }}
+                                  disabled={!canEdit}
+                                />
+                                <span>Nein</span>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        {report.pilot === true ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Beginn der Pilotierung</label>
+                              <Input
+                                type="date"
+                                value={report.pilotStart}
+                                onChange={(e) => updateReportField(report.id, 'pilotStart', e.target.value)}
+                                disabled={!canEdit}
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Ende der Pilotierung</label>
+                              <Input
+                                type="date"
+                                value={report.pilotEnd}
+                                onChange={(e) => updateReportField(report.id, 'pilotEnd', e.target.value)}
+                                disabled={!canEdit}
+                              />
+                            </div>
+                          </div>
+                        ) : report.pilot === false ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Geplante Wirkbetriebsaufnahme (WBA)</label>
+                              <Input
+                                type="date"
+                                value={report.goLive}
+                                onChange={(e) => updateReportField(report.id, 'goLive', e.target.value)}
+                                disabled={!canEdit}
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
                   </div>
                 ) : activeKey === "apis" ? (
                   <div className="space-y-4">
