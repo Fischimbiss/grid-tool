@@ -5,7 +5,7 @@ export const NAV_ITEMS = [
   { key: 'system', label: 'Systembeschreibung', Icon: Cog },
   { key: 'apis', label: 'Schnittstellen', Icon: Share2 },
   { key: 'roles', label: 'Rollen / Berechtigungen', Icon: UserCog },
-  { key: 'reports', label: 'Auswertungen / Reports', Icon: BarChart3 },
+  { key: 'reports', label: 'Reports / Auswertungen / Anzeigen', Icon: BarChart3 },
   { key: 'privacy', label: 'Datenschutz / Compliance', Icon: Lock },
   { key: 'ai', label: 'Künstliche Intelligenz', Icon: Bot },
 ] as const;
