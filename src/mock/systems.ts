@@ -37,6 +37,14 @@ export type BasisCategory = {
   matrix: Record<string, BasisMatrixEntry>
 }
 
+export type SystemCategory = {
+  type: string
+  technology: string
+  description?: string
+  useCases?: string
+  attachments?: string[]
+}
+
 export type SystemRole = {
   id: number
   number: string
@@ -56,7 +64,7 @@ export interface System {
   fso: string
   categories: {
     basis: BasisCategory
-    system: { type: string; technology: string }
+    system: SystemCategory
     interfaces: string[]
     roles: SystemRole[]
     reports: string[]
@@ -107,7 +115,15 @@ export const systems: System[] = [
         tenantSeparation: 'logical',
         matrix: makeMatrix(),
       },
-      system: { type: 'Web', technology: 'React' },
+      system: {
+        type: 'Web',
+        technology: 'React',
+        description:
+          'Verwaltet Bewerbungsprozesse und bündelt alle relevanten Informationen zu Kandidat:innen in einem zentralen System.',
+        useCases:
+          '<ul><li>Stellen und Ausschreibungen verwalten</li><li>Zusammenarbeit zwischen Recruiting und Fachbereichen</li><li>Reporting über Bewerbungsfortschritte</li></ul>',
+        attachments: ['Onboarding-Deck.pptx'],
+      },
       interfaces: ['SAP HR'],
       roles: sampleRoles,
       reports: ['Monatliche Auswertung'],
@@ -152,7 +168,13 @@ export const systems: System[] = [
         tenantSeparation: 'logical',
         matrix: makeMatrix(),
       },
-      system: { type: 'Web', technology: 'Angular' },
+      system: {
+        type: 'Web',
+        technology: 'Angular',
+        description: 'CRM für den Vertrieb mit zentralem Kundenstamm und Opportunity-Management.',
+        useCases: '<p>Dashboards, Angebots-Tracking, Schnittstelle zu Marketing-Automation.</p>',
+        attachments: ['Sales-Dashboard.png'],
+      },
       interfaces: ['SAP SD', 'MailChimp'],
       roles: sampleRoles,
       reports: ['Quartalsumsätze', 'Forecast'],

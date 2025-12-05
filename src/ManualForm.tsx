@@ -150,6 +150,12 @@ type BasisInfo = {
   matrix: Record<string, BasisMatrixEntry>; // Betroffene Gesellschaften/Betriebe
 };
 
+type SystemDescription = {
+  description: string;
+  useCases: string;
+  attachments: string[];
+};
+
 const makeInitialBasis = (): BasisInfo => ({
   shortName: "",
   longName: "",
@@ -339,6 +345,17 @@ export default function ManualForm({ system }: ManualFormProps) {
     }
     return initial;
   });
+
+  const [systemDescription, setSystemDescription] = useState<SystemDescription>(() => {
+    const descriptionFromBasis = system?.categories.basis.shortDescription || '';
+    const existing = system?.categories.system;
+    return {
+      description: existing?.description || descriptionFromBasis,
+      useCases: existing?.useCases || '',
+      attachments: existing?.attachments || [],
+    };
+  });
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
   const [shortNameEdited, setShortNameEdited] = useState(false);
   const [longNameEdited, setLongNameEdited] = useState(false);
@@ -1069,6 +1086,29 @@ export default function ManualForm({ system }: ManualFormProps) {
     updateBasisField("legacyShortName", value);
   };
 
+  const syncDescriptionFromBasis = () => {
+    if (!canEdit) return;
+    setSystemDescription((prev) => ({ ...prev, description: basis.shortDescription }));
+  };
+
+  const updateSystemDescription = <K extends keyof SystemDescription>(field: K, value: SystemDescription[K]) =>
+    setSystemDescription((prev) => ({ ...prev, [field]: value }));
+
+  const handleAttachmentUpload = (files: FileList | null) => {
+    if (!files || !canEdit) return;
+    const uploaded = Array.from(files).map((file) => file.name);
+    setSystemDescription((prev) => ({ ...prev, attachments: [...prev.attachments, ...uploaded] }));
+    if (attachmentInputRef.current) attachmentInputRef.current.value = '';
+  };
+
+  const removeAttachment = (name: string) => {
+    if (!canEdit) return;
+    setSystemDescription((prev) => ({
+      ...prev,
+      attachments: prev.attachments.filter((a) => a !== name),
+    }));
+  };
+
   useEffect(() => {
     const trimmed = basis.psi.trim();
     if (!trimmed) return;
@@ -1088,6 +1128,13 @@ export default function ManualForm({ system }: ManualFormProps) {
       return changed ? next : prev;
     });
   }, [basis.psi, longNameEdited, shortNameEdited]);
+
+  useEffect(() => {
+    setSystemDescription((prev) => {
+      if (prev.description || !basis.shortDescription) return prev;
+      return { ...prev, description: basis.shortDescription };
+    });
+  }, [basis.shortDescription]);
 
   useEffect(() => {
     if (!basis.replacingLegacy) {
@@ -1555,6 +1602,129 @@ export default function ManualForm({ system }: ManualFormProps) {
                           )}
                         </div>
                       ))}
+                    </div>
+                  </div>
+                ) : activeKey === "system" ? (
+                  <div className="space-y-6">
+                    <div className="rounded-2xl border bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-700 text-white p-6 shadow-sm">
+                      <p className="text-sm font-semibold">Systembeschreibung</p>
+                      <h3 className="text-xl font-semibold mt-1">Enthält eine ausführliche Beschreibung des System</h3>
+                      <p className="mt-2 text-sm text-blue-50 max-w-3xl">
+                        Ergänzen Sie strukturierte Inhalte zu Funktionsumfang, Anwendungsfällen und unterstützenden Unterlagen.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-xs uppercase tracking-wide text-gray-500">
+                              Kurzbeschreibung / Funktionale Systembeschreibung
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              Mehrzeiliges Rich Text Feld / Bilder können eingebunden werden
+                            </div>
+                          </div>
+                          <span className="rounded-full bg-blue-100 text-blue-700 text-[11px] px-2 py-1 font-medium">Rich Text</span>
+                        </div>
+                        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <div className="text-xs text-gray-500">Funktionale Systembeschreibung aus Basisinformationen</div>
+                              <div className="text-[11px] text-gray-400">gleicher Wert in der Datenbank</div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={syncDescriptionFromBasis}
+                              disabled={!canEdit}
+                            >
+                              Wert übernehmen
+                            </Button>
+                          </div>
+                          <div className="rounded-md border bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                            {basis.shortDescription || 'Kein Wert hinterlegt'}
+                          </div>
+                          <RichTextarea
+                            value={systemDescription.description}
+                            onChange={(value) => updateSystemDescription('description', value)}
+                            placeholder="Beschreiben Sie Ziel, Scope und Besonderheiten des Systems..."
+                            toolbar
+                            disabled={!canEdit}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-xs uppercase tracking-wide text-gray-500">Funktionen und Anwendungsfälle</div>
+                            <div className="text-sm text-gray-500">Mehrzeiliges Rich Text Feld / Bilder können eingebunden werden</div>
+                          </div>
+                          <span className="rounded-full bg-blue-100 text-blue-700 text-[11px] px-2 py-1 font-medium">Rich Text</span>
+                        </div>
+                        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
+                          <RichTextarea
+                            value={systemDescription.useCases}
+                            onChange={(value) => updateSystemDescription('useCases', value)}
+                            placeholder="Welche Funktionen, Module und Use Cases werden unterstützt?"
+                            toolbar
+                            disabled={!canEdit}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-medium">Anhänge</p>
+                          <p className="text-xs text-gray-500">Upload Funktion für Anhänge PPT / Bilder</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            ref={attachmentInputRef}
+                            type="file"
+                            accept=".ppt,.pptx,image/*"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => handleAttachmentUpload(e.target.files)}
+                            disabled={!canEdit}
+                          />
+                          <Button
+                            variant="neutral"
+                            size="sm"
+                            onClick={() => attachmentInputRef.current?.click()}
+                            disabled={!canEdit}
+                          >
+                            <Paperclip size={16} className="mr-1" /> Dateien auswählen
+                          </Button>
+                        </div>
+                      </div>
+                      {systemDescription.attachments.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {systemDescription.attachments.map((name) => (
+                            <span
+                              key={name}
+                              className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700 border"
+                            >
+                              {name}
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  className="text-gray-500 hover:text-gray-700"
+                                  onClick={() => removeAttachment(name)}
+                                  title="Entfernen"
+                                >
+                                  <X size={14} />
+                                </button>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-500">Noch keine Anhänge hochgeladen.</p>
+                      )}
                     </div>
                   </div>
                 ) : activeKey === "apis" ? (
