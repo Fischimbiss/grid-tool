@@ -32,7 +32,9 @@ import {
   Users,
   Handshake,
   Accessibility,
-  Users2
+  Users2,
+  Clock,
+  ListFilter
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -142,16 +144,49 @@ type InterfaceEntry = {
   number: string;
   name: string;
   type: InterfaceTypeOption;
+  nature: 'Technisch' | 'Manuell';
   partner: InterfacePartner | null;
+  partnerText: string;
   direction: InterfaceDirectionOption;
   personalData: boolean | null;
   smallGroupData: boolean | null;
   dataDetails: string;
   purpose: string;
   attachments: string[];
+  pilot: boolean | null;
+  pilotStart: string;
+  pilotEnd: string;
+  goLive: string;
+  regulations: string;
+  conditions: string;
+  comments: InterfaceComment[];
+  history: InterfaceHistoryEntry[];
+  version: number;
+  lastUpdated: number;
   expanded?: boolean;
   editing?: boolean;
 };
+
+type InterfaceComment = {
+  id: string;
+  author: string;
+  text: string;
+  createdAt: number;
+};
+
+type InterfaceHistoryEntry = {
+  id: string;
+  author: string;
+  createdAt: number;
+  version: number;
+  changes: string[];
+  source: 'manuell' | 'csv';
+};
+
+type InterfaceDraft = Omit<
+  InterfaceEntry,
+  'id' | 'expanded' | 'editing' | 'history' | 'comments' | 'version' | 'lastUpdated'
+>;
 
 type ReportFormatOption = 'Dashboard' | 'Report' | 'Dateiexport';
 
@@ -356,21 +391,45 @@ export default function ManualForm({ system }: ManualFormProps) {
     return [];
   });
 
-  const makeInterfaceFromString = (name: string, idx: number): InterfaceEntry => ({
-    id: Date.now() + idx,
-    number: `I-${idx + 1}`,
-    name,
-    type: 'Schnittstelle',
-    partner: null,
-    direction: 'Bidirektional',
-    personalData: null,
-    smallGroupData: null,
-    dataDetails: '',
-    purpose: '',
-    attachments: [],
-    expanded: false,
-    editing: false,
-  });
+  const makeInterfaceFromString = (name: string, idx: number): InterfaceEntry => {
+    const createdAt = Date.now() + idx;
+    return {
+      id: createdAt,
+      number: `SI-${idx + 1}`,
+      name,
+      type: 'Schnittstelle',
+      nature: 'Technisch',
+      partner: null,
+      partnerText: '',
+      direction: 'Bidirektional',
+      personalData: null,
+      smallGroupData: null,
+      dataDetails: '',
+      purpose: '',
+      attachments: [],
+      pilot: null,
+      pilotStart: '',
+      pilotEnd: '',
+      goLive: '',
+      regulations: '',
+      conditions: '',
+      comments: [],
+      history: [
+        {
+          id: `${createdAt}-v1`,
+          author: user.name,
+          createdAt,
+          version: 1,
+          changes: ['Anlage'],
+          source: 'manuell',
+        },
+      ],
+      version: 1,
+      lastUpdated: createdAt,
+      expanded: false,
+      editing: false,
+    };
+  };
 
   const [interfaces, setInterfaces] = useState<InterfaceEntry[]>(() => {
     if (system && system.categories.interfaces?.length) {
@@ -379,21 +438,48 @@ export default function ManualForm({ system }: ManualFormProps) {
     return [];
   });
 
-  const emptyInterfaceDraft = (): Omit<InterfaceEntry, 'id' | 'expanded' | 'editing'> => ({
-    number: '',
+  const generateInterfaceNumber = (source: InterfaceEntry[] = interfaces) => {
+    const existingNumbers = source
+      .map((i) => i.number)
+      .map((n) => Number((n.match(/(\d+)/) || [])[1] || 0))
+      .filter(Boolean);
+    const next = (existingNumbers.length ? Math.max(...existingNumbers) : 0) + 1;
+    return `SI-${String(next).padStart(3, '0')}`;
+  };
+
+  const emptyInterfaceDraft = (list?: InterfaceEntry[]): InterfaceDraft => ({
+    number: generateInterfaceNumber(list),
     name: '',
     type: 'Schnittstelle',
+    nature: 'Technisch',
     partner: null,
+    partnerText: '',
     direction: 'Eingehend',
     personalData: null,
     smallGroupData: null,
     dataDetails: '',
     purpose: '',
     attachments: [],
+    pilot: null,
+    pilotStart: '',
+    pilotEnd: '',
+    goLive: '',
+    regulations: '',
+    conditions: '',
   });
 
-  const [interfaceDraft, setInterfaceDraft] = useState<Omit<InterfaceEntry, 'id' | 'expanded' | 'editing'>>(() => emptyInterfaceDraft());
+  const [interfaceDraft, setInterfaceDraft] = useState<InterfaceDraft>(() => emptyInterfaceDraft());
   const [interfaceSearchTerms, setInterfaceSearchTerms] = useState<Record<string, string>>({ draft: '' });
+  const [interfaceFilters, setInterfaceFilters] = useState({
+    nature: 'alle',
+    direction: 'alle',
+    personal: 'alle',
+    pilot: 'alle',
+    query: '',
+    sort: 'nummer',
+  });
+  const [interfaceBaselines, setInterfaceBaselines] = useState<Record<number, InterfaceEntry>>({});
+  const [interfaceCommentsDrafts, setInterfaceCommentsDrafts] = useState<Record<number, string>>({});
 
   // Basisinformationen State
   const [basis, setBasis] = useState<BasisInfo>(() => {
@@ -542,13 +628,25 @@ export default function ManualForm({ system }: ManualFormProps) {
       number: i.number,
       name: i.name,
       type: i.type,
+      nature: i.nature,
       partner: i.partner,
+      partnerText: i.partnerText,
       direction: i.direction,
       personalData: i.personalData,
       smallGroupData: i.smallGroupData,
       dataDetails: i.dataDetails,
       purpose: i.purpose,
       attachments: i.attachments,
+      pilot: i.pilot,
+      pilotStart: i.pilotStart,
+      pilotEnd: i.pilotEnd,
+      goLive: i.goLive,
+      regulations: i.regulations,
+      conditions: i.conditions,
+      comments: i.comments,
+      history: i.history,
+      version: i.version,
+      lastUpdated: i.lastUpdated,
     });
     return {
       basis,
@@ -1017,15 +1115,107 @@ export default function ManualForm({ system }: ManualFormProps) {
   const toggleInterfaceExpand = (id: number) =>
     setInterfaces((prev) => prev.map((i) => (i.id === id ? { ...i, expanded: !i.expanded } : i)));
 
-  const toggleInterfaceEdit = (id: number) =>
-    setInterfaces((prev) => prev.map((i) => (i.id === id ? { ...i, editing: !i.editing, expanded: true } : i)));
+  const startInterfaceEdit = (id: number) => {
+    setInterfaces((prev) => prev.map((i) => (i.id === id ? { ...i, editing: true, expanded: true } : i)));
+    setInterfaceBaselines((prev) => {
+      const current = interfaces.find((i) => i.id === id);
+      return current ? { ...prev, [id]: { ...current } } : prev;
+    });
+  };
+
+  const cancelInterfaceEdit = (id: number) => {
+    setInterfaces((prev) => prev.map((i) => {
+      if (i.id !== id) return i;
+      const baseline = interfaceBaselines[id];
+      return baseline ? { ...baseline, expanded: true, editing: false } : { ...i, editing: false };
+    }));
+    setInterfaceBaselines((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const describePartner = useCallback((p: InterfacePartner | null, text?: string) => {
+    if (text) return text;
+    if (!p) return '';
+    return `${p.psi} – ${p.name}`;
+  }, []);
+
+  const computeInterfaceChanges = (before: InterfaceEntry, after: InterfaceEntry) => {
+    const changes: string[] = [];
+    const compare = <K extends keyof InterfaceEntry>(field: K, label: string) => {
+      if (before[field] !== after[field]) changes.push(label);
+    };
+    compare('number', 'Nummer angepasst');
+    compare('name', 'Bezeichnung geändert');
+    compare('type', 'Typ geändert');
+    compare('nature', 'Art geändert');
+    if (describePartner(before.partner, before.partnerText) !== describePartner(after.partner, after.partnerText)) {
+      changes.push('Schnittstellenpartner aktualisiert');
+    }
+    compare('direction', 'Richtung angepasst');
+    compare('personalData', 'Datenschutz Frage A');
+    compare('smallGroupData', 'Datenschutz Frage B');
+    compare('dataDetails', 'Datensatzbeschreibung');
+    compare('purpose', 'Zweckbestimmung');
+    if (before.attachments.join('|') !== after.attachments.join('|')) changes.push('Anhänge geändert');
+    compare('pilot', 'Pilotierung');
+    compare('pilotStart', 'Pilot-Start');
+    compare('pilotEnd', 'Pilot-Ende');
+    compare('goLive', 'Geplante WBA');
+    compare('regulations', 'Abstimmungen/Regelungen');
+    compare('conditions', 'Auflagen/Befristungen');
+    return changes;
+  };
+
+  const appendInterfaceHistory = (
+    entry: InterfaceEntry,
+    changes: string[],
+    source: 'manuell' | 'csv'
+  ): InterfaceEntry => {
+    if (!changes.length) return { ...entry, editing: false, expanded: true, lastUpdated: Date.now() };
+    const nextVersion = entry.version + 1;
+    const historyEntry: InterfaceHistoryEntry = {
+      id: `${entry.id}-${nextVersion}-${Date.now()}`,
+      author: user.name,
+      createdAt: Date.now(),
+      version: nextVersion,
+      changes,
+      source,
+    };
+    return {
+      ...entry,
+      version: nextVersion,
+      history: [...entry.history, historyEntry],
+      lastUpdated: historyEntry.createdAt,
+      editing: false,
+      expanded: true,
+    };
+  };
+
+  const saveInterfaceEdit = (id: number) => {
+    setInterfaces((prev) =>
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        const baseline = interfaceBaselines[id] || i;
+        const changes = computeInterfaceChanges(baseline, i);
+        return appendInterfaceHistory(i, changes, 'manuell');
+      })
+    );
+    setInterfaceBaselines((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
 
   const removeInterface = (id: number) => setInterfaces((prev) => prev.filter((i) => i.id !== id));
 
   const updateInterfaceField = (id: number, field: keyof InterfaceEntry, value: any) =>
     setInterfaces((prev) => prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
 
-  const updateInterfaceDraft = (field: keyof typeof interfaceDraft, value: any) =>
+  const updateInterfaceDraft = (field: keyof InterfaceDraft, value: any) =>
     setInterfaceDraft((prev) => ({ ...prev, [field]: value }));
 
   const parseSystemToPartner = (systemId: number): InterfacePartner | null => {
@@ -1036,9 +1226,9 @@ export default function ManualForm({ system }: ManualFormProps) {
 
   const selectInterfacePartner = (key: string | number, partner: InterfacePartner | null) => {
     if (key === 'draft') {
-      setInterfaceDraft((prev) => ({ ...prev, partner }));
+      setInterfaceDraft((prev) => ({ ...prev, partner, partnerText: partner ? `${partner.psi} – ${partner.name}` : prev.partnerText }));
     } else {
-      setInterfaces((prev) => prev.map((i) => (i.id === key ? { ...i, partner } : i)));
+      setInterfaces((prev) => prev.map((i) => (i.id === key ? { ...i, partner, partnerText: partner ? `${partner.psi} – ${partner.name}` : i.partnerText } : i)));
     }
     setInterfaceSearchTerms((prev) => ({ ...prev, [key]: partner ? `${partner.psi} – ${partner.name}` : '' }));
   };
@@ -1063,15 +1253,245 @@ export default function ManualForm({ system }: ManualFormProps) {
 
   const addInterface = () => {
     if (!interfaceDraft.number.trim() || !interfaceDraft.name.trim()) return;
+    const createdAt = Date.now();
+    const number = interfaceDraft.number.trim() || generateInterfaceNumber();
     const newInterface: InterfaceEntry = {
-      id: Date.now(),
+      id: createdAt,
       ...interfaceDraft,
+      number,
+      partnerText: interfaceDraft.partnerText || interfaceSearchTerms.draft,
+      comments: [],
+      history: [
+        {
+          id: `${createdAt}-v1`,
+          author: user.name,
+          createdAt,
+          version: 1,
+          changes: ['Anlage'],
+          source: 'manuell',
+        },
+      ],
+      version: 1,
+      lastUpdated: createdAt,
       expanded: true,
       editing: false,
     };
-    setInterfaces((prev) => [newInterface, ...prev]);
-    setInterfaceDraft(emptyInterfaceDraft());
+    setInterfaces((prev) => {
+      const next = [newInterface, ...prev];
+      setInterfaceDraft(emptyInterfaceDraft(next));
+      return next;
+    });
     setInterfaceSearchTerms((prev) => ({ ...prev, draft: '' }));
+  };
+
+  const applyManualPartner = (key: string | number) => {
+    const text = interfaceSearchTerms[key];
+    if (!text?.trim()) return;
+    if (key === 'draft') {
+      setInterfaceDraft((prev) => ({ ...prev, partner: null, partnerText: text }));
+    } else {
+      setInterfaces((prev) => prev.map((i) => (i.id === key ? { ...i, partner: null, partnerText: text } : i)));
+    }
+  };
+
+  const handleInterfaceAttachmentUpload = (key: 'draft' | number, files: FileList | null) => {
+    if (!files) return;
+    const names = Array.from(files).map((f) => f.name);
+    if (key === 'draft') {
+      setInterfaceDraft((prev) => ({ ...prev, attachments: [...prev.attachments, ...names] }));
+    } else {
+      setInterfaces((prev) => prev.map((i) => (i.id === key ? { ...i, attachments: [...i.attachments, ...names] } : i)));
+    }
+  };
+
+  const removeInterfaceAttachment = (key: 'draft' | number, name: string) => {
+    if (key === 'draft') {
+      setInterfaceDraft((prev) => ({ ...prev, attachments: prev.attachments.filter((a) => a !== name) }));
+    } else {
+      setInterfaces((prev) => prev.map((i) => (i.id === key ? { ...i, attachments: i.attachments.filter((a) => a !== name) } : i)));
+    }
+  };
+
+  const addInterfaceComment = (id: number) => {
+    const text = interfaceCommentsDrafts[id]?.trim();
+    if (!text) return;
+    const createdAt = Date.now();
+    const comment: InterfaceComment = {
+      id: `${id}-comment-${createdAt}`,
+      author: user.name,
+      text,
+      createdAt,
+    };
+    setInterfaces((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, comments: [...i.comments, comment], lastUpdated: createdAt } : i))
+    );
+    setInterfaceCommentsDrafts((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const filteredInterfaces = useMemo(() => {
+    const query = interfaceFilters.query.toLowerCase();
+    const list = interfaces
+      .filter((i) =>
+        !query ||
+        i.name.toLowerCase().includes(query) ||
+        i.number.toLowerCase().includes(query) ||
+        describePartner(i.partner, i.partnerText).toLowerCase().includes(query)
+      )
+      .filter((i) => (interfaceFilters.nature === 'alle' ? true : i.nature === interfaceFilters.nature))
+      .filter((i) => (interfaceFilters.direction === 'alle' ? true : i.direction === interfaceFilters.direction))
+      .filter((i) =>
+        interfaceFilters.personal === 'alle'
+          ? true
+          : interfaceFilters.personal === 'true'
+            ? i.personalData === true
+            : i.personalData === false
+      )
+      .filter((i) =>
+        interfaceFilters.pilot === 'alle'
+          ? true
+          : interfaceFilters.pilot === 'true'
+            ? i.pilot === true
+            : i.pilot === false
+      );
+
+    const sorted = [...list].sort((a, b) => {
+      if (interfaceFilters.sort === 'aktualisiert') return b.lastUpdated - a.lastUpdated;
+      const aNum = Number((a.number.match(/(\d+)/) || [])[1] || 0);
+      const bNum = Number((b.number.match(/(\d+)/) || [])[1] || 0);
+      return aNum - bNum;
+    });
+    return sorted;
+  }, [describePartner, interfaceFilters, interfaces]);
+
+  const readCsvBoolean = (value?: string | null) => {
+    if (!value) return null;
+    const normalized = value.trim().toLowerCase();
+    if (['ja', 'yes', 'true', '1', 'y'].includes(normalized)) return true;
+    if (['nein', 'no', 'false', '0', 'n'].includes(normalized)) return false;
+    return null;
+  };
+
+  const parseInterfaceCsv = (text: string) => {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (lines.length < 2) return [] as InterfaceDraft[];
+    const rawHeaders = lines[0].split(/;|,/).map((h) => h.trim().toLowerCase());
+    const rows: InterfaceDraft[] = lines.slice(1).map((line) => {
+      const cols = line.split(/;|,/).map((c) => c.trim());
+      const get = (key: string) => {
+        const idx = rawHeaders.indexOf(key);
+        return idx >= 0 ? cols[idx] : '';
+      };
+      return {
+        number: get('nummer') || '',
+        name: get('bezeichnung') || '',
+        type: (get('typ') as InterfaceTypeOption) || 'Schnittstelle',
+        nature: (get('art') as 'Technisch' | 'Manuell') || 'Technisch',
+        partner: null,
+        partnerText: get('partner') || '',
+        direction: (get('richtung') as InterfaceDirectionOption) || 'Eingehend',
+        personalData: readCsvBoolean(get('personaldata')),
+        smallGroupData: readCsvBoolean(get('smallgroup')),
+        dataDetails: get('datenarten') || '',
+        purpose: get('zweck') || '',
+        attachments: [],
+        pilot: readCsvBoolean(get('pilot')),
+        pilotStart: get('pilotstart') || '',
+        pilotEnd: get('pilotende') || '',
+        goLive: get('wba') || '',
+        regulations: get('regelungen') || '',
+        conditions: get('auflagen') || '',
+      };
+    });
+    return rows.filter((r) => r.number || r.name);
+  };
+
+  const mergeInterfacesFromCsv = (text: string) => {
+    const rows = parseInterfaceCsv(text);
+    if (!rows.length) return;
+    setInterfaces((prev) => {
+      const next = [...prev];
+      rows.forEach((row) => {
+        const idx = next.findIndex((i) => i.number.toLowerCase() === row.number.toLowerCase());
+        if (idx >= 0) {
+          const existing = next[idx];
+          let updated: InterfaceEntry = { ...existing };
+          const changes: string[] = [];
+          const setIfChanged = <K extends keyof InterfaceDraft>(field: K, label: string) => {
+            const incoming = row[field];
+            if (incoming === undefined || incoming === '' || incoming === null) return;
+            if (incoming !== (existing as any)[field]) {
+              (updated as any)[field] = incoming;
+              changes.push(label);
+            }
+          };
+          setIfChanged('name', 'Bezeichnung geändert (CSV)');
+          setIfChanged('type', 'Typ geändert (CSV)');
+          setIfChanged('nature', 'Art geändert (CSV)');
+          if (row.partnerText) {
+            (updated as any).partnerText = row.partnerText;
+            (updated as any).partner = null;
+            if (describePartner(existing.partner, existing.partnerText) !== row.partnerText) {
+              changes.push('Partner aktualisiert (CSV)');
+            }
+          }
+          setIfChanged('direction', 'Richtung angepasst (CSV)');
+          setIfChanged('personalData', 'Datenschutz Frage A (CSV)');
+          setIfChanged('smallGroupData', 'Datenschutz Frage B (CSV)');
+          setIfChanged('dataDetails', 'Datenarten (CSV)');
+          setIfChanged('purpose', 'Zweck (CSV)');
+          setIfChanged('pilot', 'Pilotierung (CSV)');
+          setIfChanged('pilotStart', 'Pilot-Start (CSV)');
+          setIfChanged('pilotEnd', 'Pilot-Ende (CSV)');
+          setIfChanged('goLive', 'WBA (CSV)');
+          setIfChanged('regulations', 'Regelungen (CSV)');
+          setIfChanged('conditions', 'Auflagen (CSV)');
+
+          if (changes.length) {
+            updated = appendInterfaceHistory(updated, changes, 'csv');
+          }
+          next[idx] = updated;
+        } else {
+          const createdAt = Date.now();
+          const newEntry: InterfaceEntry = {
+            id: createdAt,
+            ...row,
+            partnerText: row.partnerText,
+            partner: null,
+            comments: [],
+            history: [
+              {
+                id: `${createdAt}-v1`,
+                author: user.name,
+                createdAt,
+                version: 1,
+                changes: ['Anlage via CSV'],
+                source: 'csv',
+              },
+            ],
+            version: 1,
+            lastUpdated: createdAt,
+            expanded: false,
+            editing: false,
+          };
+          next.push(newEntry);
+        }
+      });
+      return next;
+    });
+  };
+
+  const handleInterfaceCsvUpload = (file: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = (e.target?.result as string) || '';
+      mergeInterfacesFromCsv(text);
+    };
+    reader.readAsText(file);
   };
 
   // Draft-Kommentar je Tab
@@ -2072,6 +2492,64 @@ export default function ManualForm({ system }: ManualFormProps) {
                   </fieldset>
                 ) : activeKey === "apis" ? (
                   <div className="space-y-4">
+                    <div className="rounded-xl border bg-white p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <ListFilter size={16} /> Filter & Sortierung
+                      </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                        <div className="lg:col-span-2 flex flex-wrap gap-2">
+                          <Input
+                            className="flex-1 min-w-[220px]"
+                            placeholder="Suche nach Nummer, Name oder Partner"
+                            value={interfaceFilters.query}
+                            onChange={(e) => setInterfaceFilters((prev) => ({ ...prev, query: e.target.value }))}
+                          />
+                          <Select
+                            value={interfaceFilters.nature}
+                            onChange={(e) => setInterfaceFilters((prev) => ({ ...prev, nature: e.target.value }))}
+                          >
+                            <option value="alle">Art: alle</option>
+                            <option value="Technisch">Art: Technisch</option>
+                            <option value="Manuell">Art: Manuell</option>
+                          </Select>
+                          <Select
+                            value={interfaceFilters.direction}
+                            onChange={(e) => setInterfaceFilters((prev) => ({ ...prev, direction: e.target.value }))}
+                          >
+                            <option value="alle">Richtung: alle</option>
+                            <option value="Eingehend">Eingehend</option>
+                            <option value="Ausgehend">Ausgehend</option>
+                            <option value="Bidirektional">Bidirektional</option>
+                          </Select>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <Select
+                            value={interfaceFilters.personal}
+                            onChange={(e) => setInterfaceFilters((prev) => ({ ...prev, personal: e.target.value }))}
+                          >
+                            <option value="alle">Beschäftigtendaten</option>
+                            <option value="true">Ja</option>
+                            <option value="false">Nein</option>
+                          </Select>
+                          <Select
+                            value={interfaceFilters.pilot}
+                            onChange={(e) => setInterfaceFilters((prev) => ({ ...prev, pilot: e.target.value }))}
+                          >
+                            <option value="alle">Pilotierung</option>
+                            <option value="true">Ja</option>
+                            <option value="false">Nein</option>
+                          </Select>
+                          <Select
+                            value={interfaceFilters.sort}
+                            onChange={(e) => setInterfaceFilters((prev) => ({ ...prev, sort: e.target.value }))}
+                          >
+                            <option value="nummer">Sortierung: Nummer</option>
+                            <option value="aktualisiert">Sortierung: Aktualisierung</option>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+
                     {canEdit ? (
                       <div className="rounded-xl border bg-white p-4 space-y-4">
                         <div className="flex items-center justify-between">
@@ -2090,7 +2568,8 @@ export default function ManualForm({ system }: ManualFormProps) {
                             <Input
                               value={interfaceDraft.number}
                               onChange={(e) => updateInterfaceDraft('number', e.target.value)}
-                              placeholder="z.B. SI-01"
+                              placeholder="z.B. SI-001"
+                              title="Wird automatisch fortlaufend vergeben, kann aber manuell überschrieben werden"
                             />
                           </div>
                           <div>
@@ -2114,6 +2593,17 @@ export default function ManualForm({ system }: ManualFormProps) {
                             </Select>
                           </div>
                           <div>
+                            <label className="block text-xs text-gray-500 mb-1">Art</label>
+                            <Select
+                              value={interfaceDraft.nature}
+                              onChange={(e) => updateInterfaceDraft('nature', e.target.value as 'Technisch' | 'Manuell')}
+                            >
+                              <option value="Technisch">Technisch (z. B. API, Schnittstelle, Microservice)</option>
+                              <option value="Manuell">Manuell (z. B. Datei, E-Mail, händische Übergabe)</option>
+                            </Select>
+                            <p className="text-[11px] text-gray-500 mt-1">Infotexte sind konfigurierbar; Auswahl steuert Filter & Pflichtlogik.</p>
+                          </div>
+                          <div>
                             <label className="block text-xs text-gray-500 mb-1">Schnittstellenpartner / System</label>
                             <Input
                               value={interfaceSearchTerms.draft || interfaceDraft.partner ? `${interfaceDraft.partner?.psi} – ${interfaceDraft.partner?.name}` : ''}
@@ -2133,6 +2623,12 @@ export default function ManualForm({ system }: ManualFormProps) {
                                   <div className="text-xs text-gray-500">{opt.categories.basis.psi} · {opt.longName}</div>
                                 </button>
                               ))}
+                            </div>
+                            <div className="flex items-center gap-2 mt-2 text-xs text-gray-600">
+                              <Button size="sm" variant="neutral" onClick={() => applyManualPartner('draft')}>
+                                <User size={14} className="mr-1" /> Freitext übernehmen
+                              </Button>
+                              <span className="text-gray-500">Fallback, falls kein Treffer existiert.</span>
                             </div>
                           </div>
                           <div>
@@ -2196,6 +2692,59 @@ export default function ManualForm({ system }: ManualFormProps) {
                               </div>
                             </div>
                           )}
+                          <div className="space-y-2">
+                            <span className="block text-xs text-gray-500">Pilotierung</span>
+                            <div className="flex gap-4 text-sm">
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name="pilot-draft"
+                                  checked={interfaceDraft.pilot === true}
+                                  onChange={() => updateInterfaceDraft('pilot', true)}
+                                />
+                                <span>Ja</span>
+                              </label>
+                              <label className="inline-flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name="pilot-draft"
+                                  checked={interfaceDraft.pilot === false}
+                                  onChange={() => updateInterfaceDraft('pilot', false)}
+                                />
+                                <span>Nein</span>
+                              </label>
+                            </div>
+                          </div>
+                          {interfaceDraft.pilot === true && (
+                            <>
+                              <div>
+                                <label className="block text-xs text-gray-500 mb-1">Beginn der Pilotierung</label>
+                                <Input
+                                  type="date"
+                                  value={interfaceDraft.pilotStart}
+                                  onChange={(e) => updateInterfaceDraft('pilotStart', e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-500 mb-1">Ende der Pilotierung</label>
+                                <Input
+                                  type="date"
+                                  value={interfaceDraft.pilotEnd}
+                                  onChange={(e) => updateInterfaceDraft('pilotEnd', e.target.value)}
+                                />
+                              </div>
+                            </>
+                          )}
+                          {interfaceDraft.pilot === false && (
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Geplante Wirkbetriebsaufnahme (WBA)</label>
+                              <Input
+                                type="date"
+                                value={interfaceDraft.goLive}
+                                onChange={(e) => updateInterfaceDraft('goLive', e.target.value)}
+                              />
+                            </div>
+                          )}
                         </div>
 
                         {(interfaceDraft.personalData || interfaceDraft.smallGroupData) && (
@@ -2220,17 +2769,47 @@ export default function ManualForm({ system }: ManualFormProps) {
                                 toolbar
                               />
                             </div>
-                            <div className="md:col-span-2">
-                              <label className="block text-xs text-gray-500 mb-1">Anhänge</label>
-                              <div className="flex flex-wrap gap-2 items-center text-sm">
-                                <Button variant="neutral" size="sm">
-                                  <Paperclip size={14} className="mr-1" /> Datei auswählen
-                                </Button>
-                                <span className="text-xs text-gray-500">(Upload-Demo, keine echten Daten gespeichert)</span>
-                              </div>
-                            </div>
                           </div>
                         )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Abstimmungen oder Regelungen</label>
+                            <RichTextarea
+                              value={interfaceDraft.regulations}
+                              onChange={(v) => updateInterfaceDraft('regulations', v)}
+                              rows={3}
+                              toolbar
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-500 mb-1">Auflagen / Befristungen</label>
+                            <RichTextarea
+                              value={interfaceDraft.conditions}
+                              onChange={(v) => updateInterfaceDraft('conditions', v)}
+                              rows={3}
+                              toolbar
+                            />
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-gray-500 mb-1">Anhänge</label>
+                          <div className="flex flex-wrap gap-2 items-center text-sm">
+                            <input
+                              type="file"
+                              multiple
+                              onChange={(e) => handleInterfaceAttachmentUpload('draft', e.target.files)}
+                              className="text-sm"
+                            />
+                            {interfaceDraft.attachments.map((a) => (
+                              <span key={a} className="inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full text-xs">
+                                {a}
+                                <button onClick={() => removeInterfaceAttachment('draft', a)} className="text-gray-500">✕</button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <div className="rounded-xl border bg-gray-50 p-4 text-gray-400">Keine Berechtigung Schnittstellen zu bearbeiten.</div>
@@ -2241,8 +2820,12 @@ export default function ManualForm({ system }: ManualFormProps) {
                         <div className="rounded-xl border border-dashed bg-gray-50 p-6 text-center text-gray-500">
                           Noch keine Schnittstellen erfasst.
                         </div>
+                      ) : filteredInterfaces.length === 0 ? (
+                        <div className="rounded-xl border border-dashed bg-amber-50 p-6 text-center text-amber-700">
+                          Keine Treffer mit den aktuellen Filtern.
+                        </div>
                       ) : (
-                        interfaces.map((api) => {
+                        filteredInterfaces.map((api) => {
                           const searchTerm = interfaceSearchTerms[api.id] ?? (api.partner ? `${api.partner.psi} – ${api.partner.name}` : '');
                           return (
                             <div key={api.id} className="rounded-2xl border bg-white">
@@ -2256,7 +2839,9 @@ export default function ManualForm({ system }: ManualFormProps) {
                                   </span>
                                   <span className="font-medium">{api.name}</span>
                                   <span className="text-gray-500 text-sm">Typ: {api.type}</span>
+                                  <span className="text-gray-500 text-sm">Art: {api.nature}</span>
                                   <span className="text-gray-500 text-sm">Richtung: {api.direction}</span>
+                                  <span className="text-gray-500 text-sm">Version: {api.version.toFixed(1)}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {canEdit ? (
@@ -2265,7 +2850,7 @@ export default function ManualForm({ system }: ManualFormProps) {
                                       size="icon"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        toggleInterfaceEdit(api.id);
+                                        startInterfaceEdit(api.id);
                                       }}
                                     >
                                       <Pencil size={16} />
@@ -2303,9 +2888,11 @@ export default function ManualForm({ system }: ManualFormProps) {
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 text-sm">
                                       <div className="rounded-lg bg-gray-50 p-3">
                                         <div className="text-xs text-gray-500">Schnittstellenpartner</div>
-                                        <div className="font-medium">
-                                          {api.partner ? `${api.partner.psi} – ${api.partner.name}` : '—'}
-                                        </div>
+                                        <div className="font-medium">{describePartner(api.partner, api.partnerText) || '—'}</div>
+                                      </div>
+                                      <div className="rounded-lg bg-gray-50 p-3">
+                                        <div className="text-xs text-gray-500">Art</div>
+                                        <div className="font-medium">{api.nature}</div>
                                       </div>
                                       <div className="rounded-lg bg-gray-50 p-3">
                                         <div className="text-xs text-gray-500">Personenbezogene Daten</div>
@@ -2323,6 +2910,28 @@ export default function ManualForm({ system }: ManualFormProps) {
                                           {api.smallGroupData === null ? 'Nicht bewertet' : api.smallGroupData ? 'Ja' : 'Nein'}
                                         </div>
                                       </div>
+                                      <div className="rounded-lg bg-gray-50 p-3">
+                                        <div className="text-xs text-gray-500">Pilotierung</div>
+                                        <div className="font-medium">{api.pilot === null ? 'Nicht bewertet' : api.pilot ? 'Ja' : 'Nein'}</div>
+                                        {api.pilot && (
+                                          <div className="text-xs text-gray-500 mt-1">{api.pilotStart || 'Start offen'} – {api.pilotEnd || 'Ende offen'}</div>
+                                        )}
+                                        {api.pilot === false && api.goLive && (
+                                          <div className="text-xs text-gray-500 mt-1">Geplante WBA: {api.goLive}</div>
+                                        )}
+                                      </div>
+                                      <div className="rounded-lg bg-gray-50 p-3">
+                                        <div className="text-xs text-gray-500">Regelungen / Abstimmungen</div>
+                                        <div className="whitespace-pre-wrap">{api.regulations || 'Keine Angaben'}</div>
+                                      </div>
+                                      <div className="rounded-lg bg-gray-50 p-3">
+                                        <div className="text-xs text-gray-500">Auflagen / Befristungen</div>
+                                        <div className="whitespace-pre-wrap">{api.conditions || 'Keine Angaben'}</div>
+                                      </div>
+                                      <div className="rounded-lg bg-gray-50 p-3">
+                                        <div className="text-xs text-gray-500">Letzte Aktualisierung</div>
+                                        <div className="font-medium">{new Date(api.lastUpdated).toLocaleString()}</div>
+                                      </div>
                                       {(api.personalData || api.smallGroupData) && (
                                         <div className="md:col-span-2 xl:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                                           <div>
@@ -2339,6 +2948,67 @@ export default function ManualForm({ system }: ManualFormProps) {
                                           </div>
                                         </div>
                                       )}
+
+                                      {api.attachments.length > 0 && (
+                                        <div className="md:col-span-2 xl:col-span-3">
+                                          <div className="text-xs text-gray-500 mb-1">Anhänge</div>
+                                          <div className="flex flex-wrap gap-2">
+                                            {api.attachments.map((a) => (
+                                              <span key={a} className="inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full text-xs">
+                                                <Paperclip size={12} /> {a}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      <div className="md:col-span-2 xl:col-span-3 space-y-2">
+                                        <div className="flex items-center gap-2 text-sm font-medium">
+                                          <Clock size={14} /> Änderungshistorie
+                                        </div>
+                                        <div className="space-y-2">
+                                          {api.history.map((h) => (
+                                            <div key={h.id} className="rounded-lg border p-3 bg-gray-50">
+                                              <div className="flex flex-wrap items-center justify-between text-xs text-gray-600 gap-2">
+                                                <span>v{h.version.toFixed(1)} · {h.source === 'csv' ? 'CSV-Delta' : 'Manuell'} · {new Date(h.createdAt).toLocaleString()}</span>
+                                                <span className="font-medium text-gray-800">{h.author}</span>
+                                              </div>
+                                              <div className="mt-1 text-sm text-gray-800">{h.changes.join(', ')}</div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+
+                                      <div className="md:col-span-2 xl:col-span-3 space-y-2">
+                                        <div className="flex items-center gap-2 text-sm font-medium">
+                                          <MessageSquare size={14} /> Kommentare
+                                        </div>
+                                        <div className="space-y-2">
+                                          {api.comments.map((c) => (
+                                            <div key={c.id} className="rounded-lg border p-3 bg-gray-50 text-sm">
+                                              <div className="flex items-center justify-between text-xs text-gray-500">
+                                                <span>{c.author}</span>
+                                                <span>{new Date(c.createdAt).toLocaleString()}</span>
+                                              </div>
+                                              <div className="mt-1 text-gray-800 whitespace-pre-wrap">{c.text}</div>
+                                            </div>
+                                          ))}
+                                          <div className="flex flex-col gap-2">
+                                            <Textarea
+                                              rows={2}
+                                              placeholder="Kommentar hinzufügen"
+                                              value={interfaceCommentsDrafts[api.id] || ''}
+                                              onChange={(e) => setInterfaceCommentsDrafts((prev) => ({ ...prev, [api.id]: e.target.value }))}
+                                              disabled={!canEdit}
+                                            />
+                                            <div className="flex justify-end">
+                                              <Button size="sm" onClick={() => addInterfaceComment(api.id)} disabled={!canEdit}>
+                                                Kommentar speichern
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
                                     </div>
                                   ) : (
                                     <div className="space-y-4">
@@ -2361,6 +3031,13 @@ export default function ManualForm({ system }: ManualFormProps) {
                                           </Select>
                                         </div>
                                         <div>
+                                          <label className="block text-xs text-gray-500 mb-1">Art</label>
+                                          <Select value={api.nature} onChange={(e) => updateInterfaceField(api.id, 'nature', e.target.value as 'Technisch' | 'Manuell')}>
+                                            <option value="Technisch">Technisch (z. B. API, Schnittstelle, Microservice)</option>
+                                            <option value="Manuell">Manuell (z. B. Datei, E-Mail, händische Übergabe)</option>
+                                          </Select>
+                                        </div>
+                                        <div>
                                           <label className="block text-xs text-gray-500 mb-1">Schnittstellenpartner / System</label>
                                           <Input
                                             value={searchTerm}
@@ -2379,6 +3056,12 @@ export default function ManualForm({ system }: ManualFormProps) {
                                                 <div className="text-xs text-gray-500">{opt.categories.basis.psi} · {opt.longName}</div>
                                               </button>
                                             ))}
+                                          </div>
+                                          <div className="flex items-center gap-2 mt-2 text-xs text-gray-600">
+                                            <Button size="sm" variant="neutral" onClick={() => applyManualPartner(api.id)}>
+                                              <User size={14} className="mr-1" /> Freitext übernehmen
+                                            </Button>
+                                            <span className="text-gray-500">Falls kein Treffer existiert.</span>
                                           </div>
                                         </div>
                                         <div>
@@ -2437,6 +3120,47 @@ export default function ManualForm({ system }: ManualFormProps) {
                                             </div>
                                           </div>
                                         )}
+                                        <div>
+                                          <span className="block text-xs text-gray-500 mb-1">Pilotierung</span>
+                                          <div className="flex gap-4 text-sm">
+                                            <label className="inline-flex items-center gap-2">
+                                              <input
+                                                type="radio"
+                                                name={`pilot-${api.id}`}
+                                                checked={api.pilot === true}
+                                                onChange={() => updateInterfaceField(api.id, 'pilot', true)}
+                                              />
+                                              <span>Ja</span>
+                                            </label>
+                                            <label className="inline-flex items-center gap-2">
+                                              <input
+                                                type="radio"
+                                                name={`pilot-${api.id}`}
+                                                checked={api.pilot === false}
+                                                onChange={() => updateInterfaceField(api.id, 'pilot', false)}
+                                              />
+                                              <span>Nein</span>
+                                            </label>
+                                          </div>
+                                        </div>
+                                        {api.pilot === true && (
+                                          <>
+                                            <div>
+                                              <label className="block text-xs text-gray-500 mb-1">Beginn der Pilotierung</label>
+                                              <Input type="date" value={api.pilotStart} onChange={(e) => updateInterfaceField(api.id, 'pilotStart', e.target.value)} />
+                                            </div>
+                                            <div>
+                                              <label className="block text-xs text-gray-500 mb-1">Ende der Pilotierung</label>
+                                              <Input type="date" value={api.pilotEnd} onChange={(e) => updateInterfaceField(api.id, 'pilotEnd', e.target.value)} />
+                                            </div>
+                                          </>
+                                        )}
+                                        {api.pilot === false && (
+                                          <div>
+                                            <label className="block text-xs text-gray-500 mb-1">Geplante Wirkbetriebsaufnahme (WBA)</label>
+                                            <Input type="date" value={api.goLive} onChange={(e) => updateInterfaceField(api.id, 'goLive', e.target.value)} />
+                                          </div>
+                                        )}
                                       </div>
 
                                       {(api.personalData || api.smallGroupData) && (
@@ -2449,21 +3173,41 @@ export default function ManualForm({ system }: ManualFormProps) {
                                             <label className="block text-xs text-gray-500 mb-1">Zweckbestimmung</label>
                                             <RichTextarea value={api.purpose} onChange={(v) => updateInterfaceField(api.id, 'purpose', v)} rows={3} toolbar />
                                           </div>
-                                          <div className="md:col-span-2">
-                                            <label className="block text-xs text-gray-500 mb-1">Anhänge</label>
-                                            <div className="flex flex-wrap gap-2 items-center text-sm">
-                                              <Button variant="neutral" size="sm">
-                                                <Paperclip size={14} className="mr-1" /> Datei auswählen
-                                              </Button>
-                                              <span className="text-xs text-gray-500">(Upload-Demo, keine echten Daten gespeichert)</span>
-                                            </div>
-                                          </div>
                                         </div>
                                       )}
 
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="block text-xs text-gray-500 mb-1">Abstimmungen oder Regelungen</label>
+                                          <RichTextarea value={api.regulations} onChange={(v) => updateInterfaceField(api.id, 'regulations', v)} rows={3} toolbar />
+                                        </div>
+                                        <div>
+                                          <label className="block text-xs text-gray-500 mb-1">Auflagen / Befristungen</label>
+                                          <RichTextarea value={api.conditions} onChange={(v) => updateInterfaceField(api.id, 'conditions', v)} rows={3} toolbar />
+                                        </div>
+                                      </div>
+
+                                      <div className="md:col-span-2">
+                                        <label className="block text-xs text-gray-500 mb-1">Anhänge</label>
+                                        <div className="flex flex-wrap gap-2 items-center text-sm">
+                                          <input
+                                            type="file"
+                                            multiple
+                                            onChange={(e) => handleInterfaceAttachmentUpload(api.id as number, e.target.files)}
+                                            className="text-sm"
+                                          />
+                                          {api.attachments.map((a) => (
+                                            <span key={a} className="inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full text-xs">
+                                              {a}
+                                              <button onClick={() => removeInterfaceAttachment(api.id as number, a)} className="text-gray-500">✕</button>
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+
                                       <div className="flex justify-end gap-2">
-                                        <Button variant="neutral" onClick={() => toggleInterfaceEdit(api.id)}>Abbrechen</Button>
-                                        <Button onClick={() => toggleInterfaceEdit(api.id)}>Speichern</Button>
+                                        <Button variant="neutral" onClick={() => cancelInterfaceEdit(api.id)}>Abbrechen</Button>
+                                        <Button onClick={() => saveInterfaceEdit(api.id)}>Speichern</Button>
                                       </div>
                                     </div>
                                   )}
@@ -2478,10 +3222,16 @@ export default function ManualForm({ system }: ManualFormProps) {
                     <div className="rounded-lg border bg-amber-50 p-4 text-sm">
                       <div className="font-medium">Import-Funktion für CSV</div>
                       <p className="text-xs text-amber-800 mt-1">
-                        Beim Hochladen werden nur Änderungen übernommen; unveränderte Inhalte bleiben bestehen.
+                        Beim Hochladen werden nur geänderte Felder überschrieben (Delta-Logik); unveränderte Inhalte bleiben bestehen.
                       </p>
                       <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <input type="file" accept=".csv" className="text-sm" disabled={!canEdit} />
+                        <input
+                          type="file"
+                          accept=".csv"
+                          className="text-sm"
+                          disabled={!canEdit}
+                          onChange={(e) => handleInterfaceCsvUpload(e.target.files?.[0] || null)}
+                        />
                         <Button size="sm" variant="secondary" disabled={!canEdit}>
                           <Upload size={16} className="mr-1" /> CSV abgleichen
                         </Button>
@@ -3337,4 +4087,3 @@ export default function ManualForm({ system }: ManualFormProps) {
     </div>
   );
 }
-
